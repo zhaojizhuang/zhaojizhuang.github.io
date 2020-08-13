@@ -123,9 +123,9 @@
     
     
     
-      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
-    
       <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+    
+      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
   </entry>
   
@@ -179,11 +179,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
   </entry>
   
