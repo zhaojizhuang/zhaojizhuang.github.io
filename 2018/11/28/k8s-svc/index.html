@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,iptables,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="1. Service介绍Kubernetes 中有很多概念，例如 ReplicationController、Service、Pod等。我认为 Service 是 Kubernetes 中最重要的概念，没有之一。 为什么 Service 如此重要？因为它解耦了前端用户和后端真正提供服务的 Pods 。在进一步理解 Service 之前，我们先简单地了解下 Pod ， Pod 也是 Kubernet">
+<meta name="keywords" content="k8s,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes&amp;容器网络（1）之seivice">
+<meta property="og:url" content="https://chumper.cn/2018/11/28/k8s-svc/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="1. Service介绍Kubernetes 中有很多概念，例如 ReplicationController、Service、Pod等。我认为 Service 是 Kubernetes 中最重要的概念，没有之一。 为什么 Service 如此重要？因为它解耦了前端用户和后端真正提供服务的 Pods 。在进一步理解 Service 之前，我们先简单地了解下 Pod ， Pod 也是 Kubernet">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/A1HKVXsfHNmswyx38Qh8WVkLPHpr9pex3e7DRk9H0AicQGXP2r1xP8ibkx5QqSnsMc6pQf3wbHPAKcxibFVicz1ChA/640">
+<meta property="og:image" content="https://d33wubrfki0l68.cloudfront.net/e351b830334b8622a700a8da6568cb081c464a9b/13020/images/docs/services-userspace-overview.svg">
+<meta property="og:image" content="https://d33wubrfki0l68.cloudfront.net/27b2978647a8d7bdc2a96b213f0c0d3242ef9ce0/e8c9b/images/docs/services-iptables-overview.svg">
+<meta property="og:image" content="https://d33wubrfki0l68.cloudfront.net/2d3d2b521cf7f9ff83238218dac1c019c270b1ed/9ac5c/images/docs/services-ipvs-overview.svg">
+<meta property="og:updated_time" content="2020-07-28T09:43:32.017Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes&amp;容器网络（1）之seivice">
+<meta name="twitter:description" content="1. Service介绍Kubernetes 中有很多概念，例如 ReplicationController、Service、Pod等。我认为 Service 是 Kubernetes 中最重要的概念，没有之一。 为什么 Service 如此重要？因为它解耦了前端用户和后端真正提供服务的 Pods 。在进一步理解 Service 之前，我们先简单地了解下 Pod ， Pod 也是 Kubernet">
+<meta name="twitter:image" content="https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/A1HKVXsfHNmswyx38Qh8WVkLPHpr9pex3e7DRk9H0AicQGXP2r1xP8ibkx5QqSnsMc6pQf3wbHPAKcxibFVicz1ChA/640">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2018/11/28/k8s-svc/">
+
+
+
+
+
+
+  <title>kubernetes&容器网络（1）之seivice | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/_book/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2018/11/28/k8s-svc/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubernetes&容器网络（1）之seivice</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-28T13:19:10+08:00">
+                2018-11-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="1-Service介绍"><a href="#1-Service介绍" class="headerlink" title="1. Service介绍"></a>1. Service介绍</h2><p><code>Kubernetes</code> 中有很多概念，例如 <code>ReplicationController、Service、Pod</code>等。我认为 <code>Service</code> 是 <code>Kubernetes</code> 中最重要的概念，没有之一。</p>
+<p>为什么 <code>Service</code> 如此重要？因为它解耦了前端用户和后端真正提供服务的 <code>Pods</code> 。在进一步理解 <code>Service</code> 之前，我们先简单地了解下 <code>Pod</code> ， <code>Pod</code> 也是 <code>Kubernetes</code> 中很重要的概念之一。</p>
+<p>在 <code>Kubernetes</code> 中，<code>Pod</code> 是能够创建、调度、和管理的最小部署单元，而不是单独的应用容器。<code>Pod</code> 是容器组，一个<code>Pod</code>中容器运行在一个共享的应用上下文中。这里的共享上下文是为多个 <code>Linux Namespace</code> 的联合。例如：</p>
+<ul>
+<li><code>PID</code>命名空间（在同一个 <code>Pod</code> 中的应用可以看到其它应用的进程）</li>
+<li><code>Network</code>名字空间（在同一个 <code>Pod</code> 中的应用可以访问同样的IP和端口空间）</li>
+<li><code>IPC</code>命名空间（在同一个 <code>Pod</code> 中的应用可以使用<code>SystemV IPC</code>或者<code>POSIX</code>消息队列进行通信）</li>
+<li><code>UTS</code>命名空间（在同一个 <code>Pod</code> 中的应用可以共享一个主机名称）</li>
+<li><code>Pod</code> 是一个和应用相关的“逻辑主机”， <code>Pod</code> 中的容器共享一个网络名字空间。 <code>Pod</code> 为它的组件之间的数据共享、通信和管理提供了便利。</li>
+</ul>
+<p>我们可以看出， <code>Pod</code> 在资源层面抽象了容器。</p>
+<p>因此，在<code>Kubernetes</code>中，让我们暂时先忘记容器，记住 <code>Pod</code> 。</p>
+<p><code>Kubernetes</code>对<code>Service</code>的定义是：<code>Service  is an abstraction which defines a logical set of  Pods  and a policy by which to access them。</code>我们下面理解下这句话。</p>
+<p>刚开始的时候，生活其实是很简单的。一个提供特定服务的进程，运行在一个容器中，监听容器的<code>IP</code>地址和端口号。客户端通过<code>&lt;Container IP&gt;:&lt;ContainerPort&gt;</code>，或者通过使用Docker的端口映射<code>&lt;Host IP&gt;:&lt;Host Port&gt;</code>就可以访问到这个服务了。<code>The simplest, the best</code>，简单的生活很美好。</p>
+<p><img src="https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/A1HKVXsfHNmswyx38Qh8WVkLPHpr9pex3e7DRk9H0AicQGXP2r1xP8ibkx5QqSnsMc6pQf3wbHPAKcxibFVicz1ChA/640" alt=""></p>
+<p>但是美好的日子总是短暂的。小伙伴们太热情了，单独由一个容器提供服务不够用了，怎么办？很简单啊，由多个容器提供服务不就可以了吗。问题似乎得到了解决。</p>
+<p>可是那么多的容器，客户端到底访问哪个容器中提供的服务呢？访问容器的请求不均衡怎么办？假如容器所在的主机故障了，容器在另外一台主机上拉起了，这个时候容器的IP地址变了，客户端怎么维护这个容器列表呢？所以，由多个容器提供服务的情况下，一般有两种做法：</p>
+<p>客户端自己维护提供服务的容器列表，自己做负载均衡，某个容器故障时自己做故障转移；<br>提供一个负载均衡器，解耦用户和后端提供服务的容器。负载均衡器负责向后端容器转发流量，并对后端容器进行健康检查。客户端只要访问负载均衡器的IP和端口号就行了。<br>我们在前面说Service解耦了前端用户和后端真正提供服务的 <code>Pod</code> s。从这个意义上讲，<code>Service</code>就是<code>Kubernetes</code>中 <code>Pod</code> 的负载均衡器。</p>
+<p>从生命周期来说， <code>Pod</code> 是短暂的而不是长久的应用。 <code>Pod</code> 被调度到节点，保持在这个节点上直到被销毁。当节点死亡时，分配到这个节点的 <code>Pod</code> 将会被删掉。</p>
+<p>但<code>Service</code>在其生命周期内，<code>IP</code>地址是稳定的。对于<code>Kubernetes</code>原生的应用，<code>Kubernetes</code>提供了一个<code>Endpoints</code>的对象，这个<code>Endpoints</code>的名字和<code>Service</code>的名字相同，它是一个<pod ip="">:<targetport>的列表，负责维护<code>Service</code>后端的<code>Pods</code>的变化。</targetport></pod></p>
+<p>总结一下，<code>Service</code>解耦了前端用户和后端真正提供服务的<code>Pods</code>，<code>Pod</code>在资源层面抽象了容器。由于它们的存在，使得这个简单的世界变得复杂了。</p>
+<p>对了，<code>Service</code>怎么知道是哪些后端的Pods在真正提供自己定义的服务呢？在创建<code>Pods</code>的时候，会定义一些label；在创建<code>Service</code>的时候，会定义L<code>abel Selector，Kubernetes</code>就是通过<code>Label Selector</code>来匹配后端真正服务于<code>Service</code>的后端<code>Pods</code>的。</p>
+<h2 id="2-定义一个Service"><a href="#2-定义一个Service" class="headerlink" title="2. 定义一个Service"></a>2. 定义一个<code>Service</code></h2><p>接下来就有点没意思了，我要开始翻译上面说的很重要的<code>Services in Kubernetes</code>了。当然，我会加入自己的理解。</p>
+<p><code>Service</code>也是<code>Kubernetes</code>中的一个<code>REST</code>对象。可以通过向<code>apiserver</code>发送<code>POST</code>请求进行创建。当然，<code>Kubernetes</code>为我们提供了一个强大和好用的客户端<code>kubectl</code>，代替我们向<code>apiserver</code>发送请求。但是<code>kubectl</code>不仅仅是一个简单的<code>apiserver</code>客户端，它为我们提供了很多额外的功能，例如<code>rolling update</code>等。</p>
+<p>我们可以创建一个<code>yaml</code>或者<code>json</code>格式的<code>Service</code>规范文件，然后通过<code>kubectl create -f &lt;service spec file&gt;</code>创建之。一个<code>Service</code>的例子如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Service"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"spec"</span>: &#123;</span><br><span class="line">        <span class="attr">"selector"</span>: &#123;</span><br><span class="line">            <span class="attr">"app"</span>: <span class="string">"MyApp"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"ports"</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">80</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9376</span></span><br><span class="line">            &#125;</span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上规范创建了一个名字为<code>my-service</code>的<code>Service</code>对象，它指向任何有<code>app=MyApp</code>标签的、监听<code>TCP</code>端口<code>9376</code>的任何<code>Pods</code>。</p>
+<p><code>Kubernetes</code>会自动地创建一个和<code>Service</code>名字相同的<code>Endpoints</code>对象。<code>Service</code>的<code>selector</code>会被持续地评估哪些<code>Pods</code>属于这个<code>Service</code>，结果会被更新到相应的<code>Endpoints</code>对象。</p>
+<p>当然，你也可以在定义<code>Service</code>的时候为其指定一个<code>IP</code>地址（ClusterIP，必须在kube-apiserver的<code>--service-cluster-ip-range</code>参数定义内，且不能冲突）。</p>
+<p><code>Service</code>会把到<clusterip>:<port>的流量转发到<code>targetPort</code>。缺省情况下<code>targetPort</code>等于<code>port</code>的值。一个有意思的情况是，这里你可以定义<code>targetPort</code>为一个字符串（我们可以看到<code>targetPort</code>的类型为<code>IntOrString</code>），这意味着在后端每个<code>Pods</code>中实际监听的端口值可能不一样，这极大地提高了部署<code>Service</code>的灵活性。</port></clusterip></p>
+<p><code>Kubernetes</code>的<code>Service</code>支持<code>TCP</code>和<code>UDP</code>协议，缺省是<code>TCP</code>。</p>
+<h2 id="3-Service发布服务的方式"><a href="#3-Service发布服务的方式" class="headerlink" title="3. Service发布服务的方式"></a>3. <code>Service</code>发布服务的方式</h2><p><code>Service</code>有三种类型：<code>ClusterIP，NodePort和LoadBalancer</code>。</p>
+<h3 id="3-1-ClusterIP"><a href="#3-1-ClusterIP" class="headerlink" title="3.1 ClusterIP"></a>3.1 ClusterIP</h3><p>关于<code>ClusterIP</code>：</p>
+<p>通过<code>Service</code>的<code>spec.type: ClusterIP</code>指定；<br>使用<code>cluster-internal ip</code>，即<code>kube-apiserver</code>的<code>--service-cluster-ip-range</code>参数定义的IP范围中的IP地址；<br>缺省方式；<br>只能从集群内访问，访问方式：<code>&lt;ClusterIP&gt;:&lt;Port&gt;</code>；<br><code>kube-proxy</code>会为每个<code>Service</code>，打开一个本地随机端口，通过<code>iptables</code>规则把到<code>Service</code>的流量trap到这个随机端口，由<code>kube-proxy</code>或者<code>iptables</code>接收，进而转发到后端<code>Pods</code>。</p>
+<h3 id="3-2-NodePort"><a href="#3-2-NodePort" class="headerlink" title="3.2 NodePort"></a>3.2 NodePort</h3><p>关于<code>NodePort</code>：</p>
+<p>通过<code>Service</code>的<code>spec.type: NodePort</code>指定；<br>包含<code>ClusterIP</code>功能；<br>在集群的每个节点上为<code>Service</code>开放一个端口（默认是<code>30000-32767</code>，由<code>kube-apiserver</code>的<code>--service-node-port-range</code>参数定义的节点端口范围）；<br>可从集群外部通过&lt;<code>NodeIP&gt;:&lt;NodePort&gt;</code>访问；<br>集群中的每个节点上，都会监听<code>NodePort</code>端口，因此，可以通过访问集群中的任意一个节点访问到服务。</p>
+<h3 id="3-3-LoadBalancer"><a href="#3-3-LoadBalancer" class="headerlink" title="3.3 LoadBalancer"></a>3.3 LoadBalancer</h3><p>关于<code>LoadBalancer</code>：</p>
+<p>通过<code>Service</code>的<code>spec.type: LoadBalancer</code>指定；<br>包含<code>NodePort</code>功能；<br>通过<code>Cloud Provider</code>（例如<code>GCE</code>）提供的外部<code>LoadBalancer</code>访问服务，即<code>&lt;LoadBalancerIP&gt;:&lt;Port&gt;</code>；<br><code>Service</code>通过集群的每个节点上的<code>&lt;NodeIP&gt;:&lt;NodePort&gt;</code>向外暴露；<br>有的<code>cloudprovider</code>支持直接从<code>LoadBalancer</code>转发流量到后端<code>Pods</code>（例如<code>GCE</code>），更多的是转发流量到集群节点（例如<code>AWS</code>，还有<code>HWS</code>）；<br>你可以在<code>Service</code>定义中指定<code>loadBalancerIP</code>，但这需要<code>cloudprovider</code>的支持，如果不支持则忽略。真正的<code>IP</code>在<code>status.loadBalancer.ingress.ip</code>中。<br>一个例子如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Service"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"spec"</span>: &#123;</span><br><span class="line">        <span class="attr">"selector"</span>: &#123;</span><br><span class="line">            <span class="attr">"app"</span>: <span class="string">"MyApp"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"ports"</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">80</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9376</span>,</span><br><span class="line">                <span class="attr">"nodePort"</span>: <span class="number">30061</span></span><br><span class="line">            &#125;</span><br><span class="line">        ],</span><br><span class="line">        <span class="attr">"clusterIP"</span>: <span class="string">"10.0.171.239"</span>,</span><br><span class="line">        <span class="attr">"loadBalancerIP"</span>: <span class="string">"78.11.24.19"</span>,</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"LoadBalancer"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"status"</span>: &#123;</span><br><span class="line">        <span class="attr">"loadBalancer"</span>: &#123;</span><br><span class="line">            <span class="attr">"ingress"</span>: [</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="attr">"ip"</span>: <span class="string">"146.148.47.155"</span></span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目前对接<code>ELB</code>的实现几大厂商，比如 <code>HW</code> 是<code>ELB</code>转发流量到集群节点，后面再由<code>kube-proxy</code>或者<code>iptables</code>转发到后端的<code>Pods</code>。</p>
+<h3 id="3-4-External-IPs"><a href="#3-4-External-IPs" class="headerlink" title="3.4 External IPs"></a>3.4 External IPs</h3><p><code>External IPs</code> 不是一种<code>Service</code>类型，它不由<code>Kubernetes</code>管理，但是我们也可以通过它暴露服务。数据包通过<code>&lt;External IP&gt;:&lt;Port&gt;</code>到达集群，然后被路由到<code>Service</code>的<code>Endpoints</code>。一个例子如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Service"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"spec"</span>: &#123;</span><br><span class="line">        <span class="attr">"selector"</span>: &#123;</span><br><span class="line">            <span class="attr">"app"</span>: <span class="string">"MyApp"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"ports"</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"name"</span>: <span class="string">"http"</span>,</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">80</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9376</span></span><br><span class="line">            &#125;</span><br><span class="line">        ],</span><br><span class="line">        <span class="attr">"externalIPs"</span> : [</span><br><span class="line">            <span class="string">"80.11.12.10"</span></span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="4-几种特殊的Service"><a href="#4-几种特殊的Service" class="headerlink" title="4. 几种特殊的Service"></a>4. 几种特殊的<code>Service</code></h2><h3 id="4-1-没有selector的Service"><a href="#4-1-没有selector的Service" class="headerlink" title="4.1 没有selector的Service"></a>4.1 没有<code>selector</code>的<code>Service</code></h3><p>上面说<code>Kubernetes</code>的<code>Service</code>抽象了到<code>Kubernetes</code>的<code>Pods</code>的访问。但是它也能抽象到其它类型的后端的访问。举几个场景：</p>
+<p>你想接入一个外部的数据库服务；<br>你想把一个服务指向另外一个<code>Namespace</code>或者集群的服务；<br>你把部分负载迁移到<code>Kubernetes</code>，而另外一部分后端服务运行在<code>Kubernetes</code>之外。<br>在这几种情况下，你可以定义一个没有<code>selector</code>的服务。如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Service"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"spec"</span>: &#123;</span><br><span class="line">        <span class="attr">"ports"</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">80</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9376</span></span><br><span class="line">            &#125;</span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因为没有<code>selector</code>，<code>Kubernetes</code>不会自己创建<code>Endpoints</code>对象，你需要自己手动创建一个<code>Endpoints</code>对象，把Service映射到后端指定的<code>Endpoints</code>上。</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Endpoints"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"subsets"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"addresses"</span>: [</span><br><span class="line">                &#123; <span class="attr">"IP"</span>: <span class="string">"1.2.3.4"</span> &#125;</span><br><span class="line">            ],</span><br><span class="line">            <span class="attr">"ports"</span>: [</span><br><span class="line">                &#123; <span class="attr">"port"</span>: <span class="number">9376</span> &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意：<code>Endpoint IP</code>不能是<code>loopback（127.0.0.1）</code>地址、<code>link-local（169.254.0.0/16）</code>和<code>link-local multicast（224.0.0.0/24）</code>地址。</p>
+<p>看到这里，我们似乎明白了，这不就是<code>Kubernetes</code>提供的外部服务接入的方式吗？和<code>CloudFoundry</code>的<code>ServiceBroker</code>的功能类似。</p>
+<h3 id="4-2-多端口（multi-port）的Service"><a href="#4-2-多端口（multi-port）的Service" class="headerlink" title="4.2 多端口（multi-port）的Service"></a>4.2 多端口<code>（multi-port）</code>的<code>Service</code></h3><p><code>Kubernetes</code>的<code>Service</code>还支持多端口，比如同时暴露<code>80</code>和<code>443</code>端口。在这种情况下，你必须为每个端口定义一个名字以示区分。一个例子如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"kind"</span>: <span class="string">"Service"</span>,</span><br><span class="line">    <span class="attr">"apiVersion"</span>: <span class="string">"v1"</span>,</span><br><span class="line">    <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">        <span class="attr">"name"</span>: <span class="string">"my-service"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"spec"</span>: &#123;</span><br><span class="line">        <span class="attr">"selector"</span>: &#123;</span><br><span class="line">            <span class="attr">"app"</span>: <span class="string">"MyApp"</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"ports"</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"name"</span>: <span class="string">"http"</span>,</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">80</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9376</span></span><br><span class="line">            &#125;,</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">"name"</span>: <span class="string">"https"</span>,</span><br><span class="line">                <span class="attr">"protocol"</span>: <span class="string">"TCP"</span>,</span><br><span class="line">                <span class="attr">"port"</span>: <span class="number">443</span>,</span><br><span class="line">                <span class="attr">"targetPort"</span>: <span class="number">9377</span></span><br><span class="line">            &#125;</span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意：</p>
+<p>多端口必须指定<code>ports.name</code>以示区分，端口名称不能一样；<br>如果是<code>spec.type: NodePort</code>，则每个端口的<code>NodePort</code>必须不一样，否则<code>Kubernetes</code>不知道一个<code>NodePort</code>对应的是后端哪个<code>targetPort</code>；<br>协议<code>protocol</code>和<code>port</code>可以一样。</p>
+<h2 id="4-3-Headless-services"><a href="#4-3-Headless-services" class="headerlink" title="4.3 Headless services"></a>4.3 <code>Headless services</code></h2><p>有时候你不想或者不需要<code>Kubernetes</code>为你的服务做负载均衡，以及一个<code>Service</code>的<code>IP</code>地址。在这种情况下，你可以创建一个<code>headless</code>的<code>Service</code>，通过指定<code>spec.clusterIP: None</code>。</p>
+<p>对这类<code>Service</code>，不会分配<code>ClusterIP</code>。对这类<code>Service</code>的<code>DNS</code>查询会返回一堆<code>A</code>记录，即后端<code>Pods</code>的<code>IP</code>地址。另外，<code>kube-proxy</code>不会处理这类<code>Service</code>，<code>Kubernetes</code>不会对这类<code>Service</code>做负载均衡或者代理。但是<code>Endpoints Controller</code>还是会为此类<code>Service</code>创建<code>Endpoints</code>对象。</p>
+<p>这允许开发者减少和k<code>ubernetes</code>的耦合性，允许他们自己做服务发现等。我在最后讨论的一些基于<code>Kubernetes</code>的容器服务，除了彻底不使用<code>Service</code>的概念外，也可以创建这类<code>headless</code>的<code>Service</code>，自己直接通过<code>LoadBalancer</code>把流量转发（负载均衡和代理）到后端<code>Pods</code>。</p>
+<h2 id="5-Service的流量转发模式"><a href="#5-Service的流量转发模式" class="headerlink" title="5. Service的流量转发模式"></a>5. <code>Service</code>的流量转发模式</h2><h3 id="5-1-Proxy-mode-userspace"><a href="#5-1-Proxy-mode-userspace" class="headerlink" title="5.1 Proxy-mode: userspace"></a>5.1 <code>Proxy-mode: userspace</code></h3><p><code>userspace</code>的代理模式是指由用户态的<code>kube-proxy</code>转发流量到后端<code>Pods</code>。如下图所示。</p>
+<p><img src="https://d33wubrfki0l68.cloudfront.net/e351b830334b8622a700a8da6568cb081c464a9b/13020/images/docs/services-userspace-overview.svg" alt=""></p>
+<p>关于<code>userspace</code>：</p>
+<p><code>Kube-proxy</code>通过<code>apiserver</code>监控<code>（watch）Service</code>和E<code>ndpoints</code>的变化；<br><code>Kube-proxy</code>安装<code>iptables</code>规则；<br><code>Kube-proxy</code>把访问<code>Service</code>的流量转发到后端真正的<code>Pods</code>上<code>（Round-Robin）</code>；<br><code>Kubernetes v1.0</code>只支持这种转发方式；<br>通过设置<code>service.spec.sessionAffinity</code>: <code>ClientIP</code>支持基于<code>ClientIP</code>的会话亲和性。</p>
+<h3 id="5-2-proxy-mode-iptables"><a href="#5-2-proxy-mode-iptables" class="headerlink" title="5.2 proxy-mode: iptables"></a>5.2 <code>proxy-mode: iptables</code></h3><p><code>iptables</code>的代理模式是指由内核态的<code>iptables</code>转发流量到后端<code>Pods</code>。如下图所示。</p>
+<p><img src="https://d33wubrfki0l68.cloudfront.net/27b2978647a8d7bdc2a96b213f0c0d3242ef9ce0/e8c9b/images/docs/services-iptables-overview.svg" alt=""></p>
+<p>关于<code>iptables</code>：</p>
+<ul>
+<li><code>Kube-proxy</code>通过<code>apiserver</code>监控<code>（watch）Service</code>和<code>Endpoints</code>的变化；</li>
+<li><code>Kube-proxy</code>安装<code>iptables</code>规则；</li>
+<li><code>iptables</code>把访问<code>Service</code>的流量转发到后端真正的<code>Pods上（Random）</code>；</li>
+<li><code>Kubernetes v1.1</code>已支持，但不是默认方式，<code>v1.2</code>中将会是默认方式；</li>
+<li>通过设置<code>service.spec.sessionAffinity</code>: <code>ClientIP</code>支持基于<code>ClientIP</code>的会话亲和性；</li>
+<li>需要<code>iptables</code>和内核版本的支持。<code>iptables &gt; 1.4.11</code>，内核支持<code>route_localnet</code>参数<code>(kernel &gt;= 3.6)</code>；</li>
+</ul>
+<p>相比<code>userspace</code>的优点：</p>
+<ul>
+<li>1，数据包不需要拷贝到用户态的<code>kube-proxy</code>再做转发，因此效率更高、更可靠。</li>
+<li>2，不修改<code>Client IP</code>。</li>
+</ul>
+<h3 id="5-3-proxy-mode-iptables"><a href="#5-3-proxy-mode-iptables" class="headerlink" title="5.3 proxy-mode: iptables"></a>5.3 <code>proxy-mode: iptables</code></h3><blockquote>
+<p>kubernetes v1.8 引入， 1.11正式可用</p>
+</blockquote>
+<p>在 <code>ipvs</code> 模式下，<code>kube-proxy</code>监视<code>Kubernetes</code>服务和端点，调用 <code>netlink</code>接口相应地创建 <code>IPVS</code> 规则， 并定期将 <code>IPVS</code> 规则与 <code>Kubernetes</code> 服务和端点同步。 该控制循环可确保　<code>IPVS</code>　状态与所需状态匹配。 访问服务时，<code>IPVS</code>　将流量定向到后端Pod之一。</p>
+<p><img src="https://d33wubrfki0l68.cloudfront.net/2d3d2b521cf7f9ff83238218dac1c019c270b1ed/9ac5c/images/docs/services-ipvs-overview.svg" alt=""></p>
+<p><code>IPVS</code>代理模式基于类似于 <code>iptables</code>模式的 <code>netfilter</code> 挂钩函数，但是使用哈希表作为基础数据结构，并且在内核空间中工作。 这意味着，与 <code>iptables</code> 模式下的 <code>kube-proxy</code> 相比<code>，IPVS</code> 模式下的 <code>kube-proxy</code> 重定向通信的延迟要短，并且在同步代理规则时具有更好的性能。与其他代理模式相比，<code>IPVS</code> 模式还支持更高的网络流量吞吐量。</p>
+<p><code>IPVS</code>提供了更多选项来平衡后端<code>Pod</code>的流量。 这些是：</p>
+<ul>
+<li>rr: round-robin</li>
+<li>lc: least connection (最小连接数)</li>
+<li>dh: destination hashing（目的地址has）</li>
+<li>sh: source hashing（源地址has）</li>
+<li>等等 </li>
+</ul>
+<h3 id="5-3-userspace和iptables转发方式的主要不同点"><a href="#5-3-userspace和iptables转发方式的主要不同点" class="headerlink" title="5.3 userspace和iptables转发方式的主要不同点"></a>5.3 <code>userspace</code>和<code>iptables</code>转发方式的主要不同点</h3><p><code>userspace</code>和<code>iptables</code>转发方式的主要不同点如下：</p>
+<table>
+<thead>
+<tr>
+<th>比较项</th>
+<th><code>userspace</code></th>
+<th><code>iptables</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p> 谁转发流量到<code>Pods</code>|    <code>kube-proxy</code>把访问<code>Service</code>的流量转发到后端真正的<code>Pods</code>上 |<code>iptables</code>把访问<code>Service</code>的流量转发到后端真正的<code>Pods</code>上<br>|转发算法    |轮询<code>Round-Robin</code>|    随机<code>Random</code><br>|用户态和内核态    |数据包需要拷贝到用户态的<code>kube-proxy</code>再做转发，因此效率低、不可靠    |数据包直接在内核态转发，因此效率更高、更可靠<br>|是否修改<code>Client IP</code>    |因为<code>kube-proxy</code>在中间做代理，会修改数据包的<code>Client IP</code>|    不修改数据包的<code>Client IP</code><br><code>iptables</code>版本和内核支持|    不依赖|    <code>iptables &gt; 1.4.11</code>，内核支持<code>route_localnet</code>参数(<code>kernel &gt;= 3.6</code>)</p>
+<p>通过设置<code>kube-proxy</code>的启动参数<code>--proxy-mode</code>设定使用<code>userspace</code>还是<code>iptables</code>代理模式。</p>
+<h2 id="6-Service发现方式"><a href="#6-Service发现方式" class="headerlink" title="6. Service发现方式"></a>6. Service发现方式</h2><p>现在服务创建了，得让别人来使用了。别人要使用首先得知道这些服务呀，服务治理很基本的一个功能就是提供服务发现。<code>Kubernetes</code>为我们提供了两种基本的服务发现方式：环境变量和<code>DNS</code>。</p>
+<h3 id="6-1-环境变量"><a href="#6-1-环境变量" class="headerlink" title="6.1 环境变量"></a>6.1 环境变量</h3><p>当一个<code>Pod</code>在节点Node上运行时，<code>kubelet</code>会为每个活动的服务设置一系列的环境变量。它支持<code>Docker links compatible</code>变量，以及更简单的<code>{SVCNAME}_SERVICE_HOST</code>和<code>{SVCNAME}_SERVICE_PORT</code>变量。后者是把服务名字大写，然后把中划线（-）转换为下划线（_）。</p>
+<p>以服务<code>redis-master</code>为例，它暴露TCP协议的6379端口，被分配了集群IP地址10.0.0.11，则会创建如下环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">REDIS_MASTER_SERVICE_HOST=10.0.0.11</span><br><span class="line">REDIS_MASTER_SERVICE_PORT=6379</span><br><span class="line">REDIS_MASTER_PORT=tcp://10.0.0.11:6379</span><br><span class="line">REDIS_MASTER_PORT_6379_TCP=tcp://10.0.0.11:6379</span><br><span class="line">REDIS_MASTER_PORT_6379_TCP_PROTO=tcp</span><br><span class="line">REDIS_MASTER_PORT_6379_TCP_PORT=6379</span><br><span class="line">REDIS_MASTER_PORT_6379_TCP_ADDR=10.0.0.11</span><br></pre></td></tr></table></figure>
+<p>这里有一个注意点是，如果一个<code>Pod</code>要访问一个<code>Service</code>，则必须在该Service之前创建，否则这些环境变量不会被注入此Pod。DNS方式的服务发现就没有此限制。</p>
+<h2 id="6-2-DNS"><a href="#6-2-DNS" class="headerlink" title="6.2 DNS"></a>6.2 DNS</h2><p>虽然<code>DNS</code>是一个<code>cluster add-on</code>特性，但是我们还是强烈推荐使用<code>DNS</code>作为服务发现的方式。<code>DNS</code>服务器通过<code>KubernetesAPI</code>监控新的<code>Service</code>的生成，然后为每个<code>Service</code>设置一堆<code>DNS</code>记录。如果集群设置了<code>DNS</code>，则该集群中所有的<code>Pods</code>都能够使用<code>DNS</code>解析<code>Sercice</code>。</p>
+<p>例如，如果在<code>Kubernertes</code>中的<code>my-ns</code>名字空间中有一个服务叫做<code>my-service</code>，则会创建一个<code>my-service.my-ns</code>的<code>DNS</code>记录。在同一个名字空间<code>my-ns</code>的<code>Pods</code>能直接通过服务名<code>my-service</code>查找到该服务。如果是其它的<code>Namespace</code>中的<code>Pods</code>，则需加上名字空间，例如<code>my-service.my-ns</code>。返回的结果是服务的<code>ClusterIP</code>。当然，对于我们上面讲的<code>headless</code>的<code>Service</code>，返回的则是该<code>Service</code>对应的一堆后端<code>Pods</code>的<code>IP</code>地址。</p>
+<p>对于知名服务端口，<code>Kubernetes</code>还支持<code>DNS SRV</code>记录。例如<code>my-service.my-ns</code>的服务支持<code>TCP</code>协议的<code>http</code>端口，则你可以通过一个<code>DNS SRV</code>查询<code>_http._tcp.my-service.my-ns</code>来发现http的端口。</p>
+<p>对于每个<code>Service</code>的<code>DNS</code>记录，<code>Kubernetes</code>还会加上一个集群域名的后缀，作为完全域名（FQDN）。这个集群域名通过svc+安装集群<code>DNS</code>的<code>DNS_DOMAIN</code>参数指定，默认是<code>svc.cluster.local</code>。如果不是一个标准的<code>Kubernetes</code>支持的安装，则启动<code>kubelet</code>的时候指定参数<code>--cluster-domain</code>，你还需要指定<code>--cluster-dns</code>告诉<code>kubelet</code>集群<code>DNS</code>的地址。</p>
+<h2 id="6-3-如何发现和使用服务？"><a href="#6-3-如何发现和使用服务？" class="headerlink" title="6.3 如何发现和使用服务？"></a>6.3 如何发现和使用服务？</h2><p>一般在创建<code>Pod</code>的时候，指定一个环境变量<code>GET_HOSTS_FROM</code>，值可以设为<code>env</code>或者<code>dns</code>。在<code>Pod</code>中的应用先获取这个环境变量，得到获取服务的方式。如果是<code>env</code>，则通过<code>getenv</code>获取相应的服务的环境变量，例如<code>REDIS_SLAVE_SERVICE_HOST</code>；如果是<code>dns</code>，则可以在<code>Pod</code>内通过标准的<code>gethostbyname</code>获取服务主机名。有个例外是P<code>od</code>的定义中，不能设置h<code>ostNetwork: true</code>。</p>
+<p>获取到服务的地址，就可以通过正常方式使用服务了。</p>
+<p>如下是<code>Kubernetes</code>自带的<code>guestbook.php</code>中的一段相关代码，供参考：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">host = <span class="string">'redis-slave'</span>;</span></span><br><span class="line">if (getenv('GET_HOSTS_FROM') == 'env') &#123;</span><br><span class="line"><span class="meta">  $</span><span class="bash">host = getenv(<span class="string">'REDIS_SLAVE_SERVICE_HOST'</span>);</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">$</span><span class="bash">client = new Predis\Client([</span></span><br><span class="line">  'scheme' =&gt; 'tcp',</span><br><span class="line">  'host'   =&gt; $host,</span><br><span class="line">  'port'   =&gt; 6379,</span><br><span class="line">]);</span><br></pre></td></tr></table></figure>
+<h2 id="7-一些容器服务中的Service"><a href="#7-一些容器服务中的Service" class="headerlink" title="7. 一些容器服务中的Service"></a>7. 一些容器服务中的<code>Service</code></h2><p>虽然<code>Service</code>在<code>Kubernetes</code>中如此重要，但是对一些基于<code>Kubernetes</code>的容器服务，并没有使用<code>Service</code>，或者用的是上面讨论的<code>headless</code>类型的<code>Service</code>。这种方式基本上是把容器当做<code>VM</code>使用的典型，<code>LoadBalancer</code>和<code>Pods</code>网络互通，通过<code>LoadBalancer</code>直接把流量转发到<code>Pods</code>上，省却了中间由<code>kube-proxy</code>或者<code>iptables</code>的转发方式，从而提高了流量转发效率，但是也由<code>LoadBalancer</code>自己提供对后端P<code>ods</code>的维护，一般需要<code>LoadBalancer</code>提供动态路由的功能（即后端<code>Pods</code>可以动态地从<code>LoadBalancer</code>上注册/注销）。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2018/11/28/k8s-svc/" title="kubernetes&容器网络（1）之seivice">https://chumper.cn/2018/11/28/k8s-svc/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/10/25/container-network/" rel="next" title="容器网络">
+                <i class="fa fa-chevron-left"></i> 容器网络
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/05/k8s-iptables/" rel="prev" title="kubernetes&容器网络（2）之iptables">
+                kubernetes&容器网络（2）之iptables <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Service介绍"><span class="nav-number">1.</span> <span class="nav-text">1. Service介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-定义一个Service"><span class="nav-number">2.</span> <span class="nav-text">2. 定义一个Service</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Service发布服务的方式"><span class="nav-number">3.</span> <span class="nav-text">3. Service发布服务的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-ClusterIP"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 ClusterIP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-NodePort"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 NodePort</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-LoadBalancer"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 LoadBalancer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-External-IPs"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 External IPs</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-几种特殊的Service"><span class="nav-number">4.</span> <span class="nav-text">4. 几种特殊的Service</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-没有selector的Service"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 没有selector的Service</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-多端口（multi-port）的Service"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 多端口（multi-port）的Service</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-Headless-services"><span class="nav-number">5.</span> <span class="nav-text">4.3 Headless services</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-Service的流量转发模式"><span class="nav-number">6.</span> <span class="nav-text">5. Service的流量转发模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-Proxy-mode-userspace"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 Proxy-mode: userspace</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-proxy-mode-iptables"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 proxy-mode: iptables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-proxy-mode-iptables"><span class="nav-number">6.3.</span> <span class="nav-text">5.3 proxy-mode: iptables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-userspace和iptables转发方式的主要不同点"><span class="nav-number">6.4.</span> <span class="nav-text">5.3 userspace和iptables转发方式的主要不同点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Service发现方式"><span class="nav-number">7.</span> <span class="nav-text">6. Service发现方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-环境变量"><span class="nav-number">7.1.</span> <span class="nav-text">6.1 环境变量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-DNS"><span class="nav-number">8.</span> <span class="nav-text">6.2 DNS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-如何发现和使用服务？"><span class="nav-number">9.</span> <span class="nav-text">6.3 如何发现和使用服务？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-一些容器服务中的Service"><span class="nav-number">10.</span> <span class="nav-text">7. 一些容器服务中的Service</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

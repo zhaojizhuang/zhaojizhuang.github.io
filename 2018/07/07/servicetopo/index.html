@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="本文根据华为工程师DJ在LC3上的演讲整理：  1. 拓扑概念首先，我们讲一下kubernetes中的拓扑。根据kubernetes现在的设计，我觉得拓扑可以是任意的。用户可以指定任何拓扑关系，比如az(available zone可用区)、region、机架、主机、交换机，甚至发电机。Kubernetes中拓扑的概念已经在调度器中被广泛使用。 2. Kubernetes调度器中的拓扑在kube">
+<meta name="keywords" content="k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】">
+<meta property="og:url" content="https://chumper.cn/2018/07/07/servicetopo/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="本文根据华为工程师DJ在LC3上的演讲整理：  1. 拓扑概念首先，我们讲一下kubernetes中的拓扑。根据kubernetes现在的设计，我觉得拓扑可以是任意的。用户可以指定任何拓扑关系，比如az(available zone可用区)、region、机架、主机、交换机，甚至发电机。Kubernetes中拓扑的概念已经在调度器中被广泛使用。 2. Kubernetes调度器中的拓扑在kube">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://chumper.cn/images/svctop1.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop2.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop3.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop4.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop5.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop6.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop7.jpeg">
+<meta property="og:image" content="https://chumper.cn/images/svctop8.jpeg">
+<meta property="og:updated_time" content="2020-07-28T09:43:32.018Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】">
+<meta name="twitter:description" content="本文根据华为工程师DJ在LC3上的演讲整理：  1. 拓扑概念首先，我们讲一下kubernetes中的拓扑。根据kubernetes现在的设计，我觉得拓扑可以是任意的。用户可以指定任何拓扑关系，比如az(available zone可用区)、region、机架、主机、交换机，甚至发电机。Kubernetes中拓扑的概念已经在调度器中被广泛使用。 2. Kubernetes调度器中的拓扑在kube">
+<meta name="twitter:image" content="https://chumper.cn/images/svctop1.jpeg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2018/07/07/servicetopo/">
+
+
+
+
+
+
+  <title>服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】 | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/_book/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2018/07/07/servicetopo/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-07T23:40:18+08:00">
+                2018-07-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文根据华为工程师DJ在LC3上的演讲整理：</p>
+</blockquote>
+<h2 id="1-拓扑概念"><a href="#1-拓扑概念" class="headerlink" title="1. 拓扑概念"></a>1. 拓扑概念</h2><p>首先，我们讲一下<code>kubernetes</code>中的拓扑。根据<code>kubernetes</code>现在的设计，我觉得拓扑可以是任意的。用户可以指定任何拓扑关系，比如az(available zone可用区)、region、机架、主机、交换机，甚至发电机。<code>Kubernetes</code>中拓扑的概念已经在调度器中被广泛使用。</p>
+<h2 id="2-Kubernetes调度器中的拓扑"><a href="#2-Kubernetes调度器中的拓扑" class="headerlink" title="2. Kubernetes调度器中的拓扑"></a>2. <code>Kubernetes</code>调度器中的拓扑</h2><p>在<code>kubernetes</code>中，<code>pod</code>是工作的基本单元，所以调度器的工作可以简化为“在哪里运行这些<code>pod</code>”，当然我们知道<code>pod</code>是运行在节点里，但是怎么选择节点，这是调度器要解决的问题。</p>
+<p>在<code>kubernetes</code>中，我们通过<code>label</code>选择节点，从而确定<code>pod</code>应该放在哪个节点中。下面是<code>kubernetes</code>原生提供的一些<code>label</code>：</p>
+<ul>
+<li>k8s.io/hostname</li>
+</ul>
+<p>此外，<code>kubernetes</code>允许集群管理员和云提供商自定义label，比如机架、磁盘类型等。</p>
+<h2 id="3-Kubernetes中基于拓扑的调度"><a href="#3-Kubernetes中基于拓扑的调度" class="headerlink" title="3.Kubernetes中基于拓扑的调度"></a>3.<code>Kubernetes</code>中基于拓扑的调度</h2><p>比如，如果我们要将<code>PostgreSQL</code>服务运行在不同的<code>zone</code>中，假设<code>zone</code>的名字分别是<code>1a</code>和<code>1b</code>，那么我们可以在<code>podSpec</code>中定义节点亲和，如下图所示。主服务器需要运行在<code>zone a</code>的节点中，备用服务器需要运行在属于<code>zone b</code>的节点中。</p>
+<p><img src="/images/svctop1.jpeg" alt=""></p>
+<p>在k<code>ubernetes</code>中，<code>pod</code>与<code>node</code>的亲和或反亲和是刚性的要求。那么我们之前的问题“在哪里运行这些<code>pod</code>”就可以简化成“可以在这个节点运行<code>pod</code>吗”，答案取决于节点的一些情况，比如节点的名字，节点所属的<code>region</code>，节点是否有<code>SSD</code>盘等。</p>
+<p>另外，调度器还会考虑另外一个问题，“可以把<code>pod</code>和其他<code>pod</code>放在同一区域吗”，比如，<code>PostgreSQL</code>服务肯定不能和<code>MySQL</code>服务运行在同一个节点中。<code>Kubernetes</code>通过下面三个步骤解决这个问题：</p>
+<ul>
+<li><ol>
+<li>定义“其他<code>pod</code>”。这个过程与选择<code>node</code>的过程类似，我们通过<code>label</code>选择<code>pod</code>。比如，我们可以选择带有“<code>app</code>=<code>web-frontend</code>”<code>label</code>的<code>pod</code></li>
+</ol>
+</li>
+<li><ol start="2">
+<li>定义“同一区域”。如图中的两个<code>pod</code>，是在同一区域吗?不是，因为它们<code>podSpec</code>中的t<code>opologyKey</code>字段，它是<code>node label中</code>的<code>key</code>，用于指定拓扑区域，比如<code>zone</code>、<code>rack</code>、<code>主机</code>等。比如如果我们使用“<code>k8s.io/hostname</code>”作为<code>topologyKey</code>，那么同一区域就表示在同一个主机上。</li>
+</ol>
+</li>
+</ul>
+<p><img src="/images/svctop2.jpeg" alt=""></p>
+<p>我们可以使用之前提到的任何<code>nodelabel</code>作为“同一区域”的标识，比如在同一个<code>zone</code>。或者使用自定义的<code>label</code>，下图给出了通过自定义拓扑<code>label</code>创建<code>node</code>组。</p>
+<p><img src="/images/svctop3.jpeg" alt=""></p>
+<ul>
+<li><ol start="3">
+<li>最后是决定是否可以。这取决于亲和和反亲和（<code>affinity/anti-affinity</code>）。</li>
+</ol>
+</li>
+</ul>
+<ol start="4">
+<li><code>Kubernetes</code>中其他依赖拓扑关系的特性</li>
+</ol>
+<p>上面讲到的部署<code>pod</code>时的拓扑感知。除了调度之外，还有许多特性会依赖拓扑关系：</p>
+<ul>
+<li><p>工作负载：在缩容或滚动升级的时候，控制器决定先杀掉哪些pod</p>
+</li>
+<li><p>卷存储：卷存储会有拓扑限制，来决定可以挂在卷的node集。比如GCE的持久卷只能挂在在同一个zone的节点上，本地卷被所在节点访问。</p>
+</li>
+</ul>
+<h2 id="依赖拓扑的服务亲和性路由"><a href="#依赖拓扑的服务亲和性路由" class="headerlink" title="依赖拓扑的服务亲和性路由"></a>依赖拓扑的服务亲和性路由</h2><h3 id="1-Service和endpoint"><a href="#1-Service和endpoint" class="headerlink" title="1. Service和endpoint"></a>1. <code>Service</code>和<code>endpoint</code></h3><p>首先我们来了解一下<code>kubernetes</code>中的<code>service</code>和<code>endpoint</code>的 概念。</p>
+<p><code>Kubernetes</code>中的<code>service</code>是一个抽象的概念，它通过<code>label</code>选择一个<code>pod</code>的集合，并且定义了这些<code>pod</code>的访问策略。简言之，<code>service</code>指定一个虚拟<code>IP</code>，作为这些<code>pod</code>的访问入口，在4层协议上工作。</p>
+<p><code>Kubernetes</code>中的<code>endpoint</code>是<code>service</code>后端的<code>pod</code>的地址列表。作为使用者，我们不需要感知它们，<code>service</code>创建的时候<code>endpoint</code>会自动创建，并且会根据后端的<code>pod</code>自动配置好。</p>
+<p><img src="/images/svctop4.jpeg" alt=""></p>
+<h3 id="2-Service的工作原理"><a href="#2-Service的工作原理" class="headerlink" title="2. Service的工作原理"></a>2. <code>Service</code>的工作原理</h3><p><code>Endpoints</code>控制器会<code>watch</code>到创建好的<code>service</code>和<code>pod</code>，然后创建相应的endpoint。<code>Kube-proxy</code>会<code>watch</code> <code>service</code>和<code>endpoint</code>，并创建相应的<code>proxy</code>规则。在<code>kubernetes1.8</code>之前<code>proxy</code>是通过底层的<code>iptables</code>实现，但是<code>iptables</code>只支持随机的负载均衡策略，并且可扩展性很差。</p>
+<p>在1.8之后，我们实现并在社区持续推动了基于<code>ipvs</code>的<code>proxy</code>，这种<code>proxy</code>模式相对原来的<code>iptables</code>模式有很多优势，比如支持很多负载均衡算法，并且在大规模场景下接近无限扩展性等。好消息是，现在<code>kubernetes</code>社区基于<code>ipvs</code>的<code>proxy</code>已经<code>svc</code>，大家可以在生产环境使用。那么问题来了，既然我们已经有<code>IPVS</code>加持了，为什么还需要服务亲和性路由呢？</p>
+<p><img src="/images/svctop5.jpeg" alt=""></p>
+<h3 id="3-服务亲和性路由"><a href="#3-服务亲和性路由" class="headerlink" title="3. 服务亲和性路由"></a>3. 服务亲和性路由</h3><p>先看一下用户的使用场景，当我们将<code>pod</code>正确的放到了用户指定的区域之后，就会有下面的问题。</p>
+<ul>
+<li><ol>
+<li><p><strong>单节点通信</strong>（访问<code>serviceIP</code>的时候只能访问到本节点的应用）</p>
+<ul>
+<li><p>我们使用<code>daemonset</code>部署<code>fluent</code>的时候，应用只需要与当前节点的<code>fluent</code>通信。</p>
+</li>
+<li><p>一些用户出于安全考虑，希望确保他们只能与本地节点的服务通信，因为跨节点的流量可能会携带来自其他节点的敏感信息。</p>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol start="2">
+<li><p><strong>限制跨zone的流量</strong></p>
+<ul>
+<li><p>因为跨<code>zone</code>的流量会收费，而同一个<code>zone</code>的流量则不会。而有些云提供商，比如阿里云甚至不允许跨<code>zone</code>的流量。</p>
+</li>
+<li><p>性能优势：显然，到达本区域（节点/<code>zone</code>等）的流量肯定比跨区访问的流量有更低的延时和更高的带宽。</p>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="4-亲和性路由的实现需要解决的问题"><a href="#4-亲和性路由的实现需要解决的问题" class="headerlink" title="4. 亲和性路由的实现需要解决的问题"></a>4. 亲和性路由的实现需要解决的问题</h3><p>正如我们前边讲到的，本地意味着一定的拓扑等级，我们需要有一个可以根据拓扑选择<code>endpoint</code>子集的机制。</p>
+<p>这样我们就面临着如下问题：</p>
+<ul>
+<li><p>是软亲和还是硬亲和。硬亲和意味着只需要本地的后端，而软亲和意味着首先尝试本地的，如果本地没有则尝试更广范围的。</p>
+</li>
+<li><p>如果是软亲和，那么判定标准是什么呢？可能给每个拓扑区域增加权重是一个解决方案。</p>
+</li>
+<li><p>如果多个后端满足条件，那么选择的依据又是什么呢？随机选择还是引入概率？</p>
+</li>
+</ul>
+<h3 id="5-我们的方案"><a href="#5-我们的方案" class="headerlink" title="5. 我们的方案"></a>5. 我们的方案</h3><p>我们提供了一个解决方案，引用一种新的资源“<code>ServicePolicy</code>”。集群管理员可以通过<code>ServicePolicy</code>配置“<code>local</code>”的选择标准，以及各种拓扑的权重。<code>ServicePolicy</code>是一种可选的<code>namespace</code>范围内的资源，有三种模式：<code>Required/Perferred/Ignored</code>，分别代表硬亲和/软亲和/忽略。</p>
+<p><img src="/images/svctop6.jpeg" alt=""></p>
+<p>上图是我们引入和<code>ServicePolicy</code>资源和<code>endpoint</code>引入的字段示例。在我们的示例中，<code>ServicePolicy</code>会选择<code>namespace foo</code>中带有<code>label app=bar</code>的<code>service</code>。由于我们将<code>hostname</code>设置为<code>ServicePolicy</code>的拓扑依据，那么对这些<code>service</code>的访问会只路由到与<code>kube-proxy</code>有在同一个<code>host</code>的后端。</p>
+<p>需要说明的是，<code>service</code>和<code>ServicePolicy</code>是多对多的关系，一个<code>ServicePolicy</code>可以通过label选择多个<code>service</code>，一个<code>service</code>也可以被多个<code>ServicePolicy</code>选中，有多个亲和性要求。</p>
+<p>另外我们还希望<code>endpoint</code>携带节点的拓扑信息，因此我们为<code>endpoint</code>添加一个新的字段<code>Topology</code>，用于识别<code>pod</code>属于的拓扑区域，比如在哪个<code>host/rack/zone/region</code>等。</p>
+<p>这会改变现有的逻辑。如下图所示，<code>Endpoint</code>控制器需要watch两种新的资源，<code>node</code>和<code>ServicePolicy</code>，它需要维护<code>node</code>与<code>endpoint</code>的对应关系，并根据<code>node</code>的拓扑信息更新<code>endpoint</code>的<code>Topology</code>字段。另外，<code>kube-proxy</code>也会相应地作一些改动。它需要过滤掉与自身不在同一个拓扑区域的<code>endpoint</code>，这意味着<code>kube-proxy</code>会在不同的节点上创建不同的规则。</p>
+<p><img src="/images/svctop7.jpeg" alt=""></p>
+<p>下图表示从<code>ServicePolicy</code>到<code>proxy</code>规则的数据流。首先<code>ServicePolicy</code>通过<code>label</code>选择一组<code>service</code>，我们可以根据这些<code>service</code>找到它们的<code>pod</code>。<code>Endpoint</code>控制器会将<code>pod</code>所在节点的拓扑<code>label</code>放到对应的<code>endpoint</code>中。<code>Kube-proxy</code>负责仅为处在同一拓扑区域的<code>endpoint</code>创建<code>proxy</code>规则，并且当多个<code>endpoint</code>满足要求时提供路由策略。</p>
+<p><img src="/images/svctop8.jpeg" alt=""></p>
+<p>[总 结]</p>
+<p>目前我们已经在华为云的CCE服务上实现了服务亲和性路由，效果很好，欢迎大家体验。我们很乐意把这个特性开源出来，并且正在做这件事，相信它会像<code>IPVS</code>一样，成为<code>kubernetes</code>下一个版本的一个重要特性。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2018/07/07/servicetopo/" title="服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】">https://chumper.cn/2018/07/07/servicetopo/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/06/12/cisco-platform/" rel="next" title="了解思科 Tetration 平台">
+                <i class="fa fa-chevron-left"></i> 了解思科 Tetration 平台
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/10/25/container-network/" rel="prev" title="容器网络">
+                容器网络 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-拓扑概念"><span class="nav-number">1.</span> <span class="nav-text">1. 拓扑概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Kubernetes调度器中的拓扑"><span class="nav-number">2.</span> <span class="nav-text">2. Kubernetes调度器中的拓扑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Kubernetes中基于拓扑的调度"><span class="nav-number">3.</span> <span class="nav-text">3.Kubernetes中基于拓扑的调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#依赖拓扑的服务亲和性路由"><span class="nav-number">4.</span> <span class="nav-text">依赖拓扑的服务亲和性路由</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Service和endpoint"><span class="nav-number">4.1.</span> <span class="nav-text">1. Service和endpoint</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Service的工作原理"><span class="nav-number">4.2.</span> <span class="nav-text">2. Service的工作原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-服务亲和性路由"><span class="nav-number">4.3.</span> <span class="nav-text">3. 服务亲和性路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-亲和性路由的实现需要解决的问题"><span class="nav-number">4.4.</span> <span class="nav-text">4. 亲和性路由的实现需要解决的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-我们的方案"><span class="nav-number">4.5.</span> <span class="nav-text">5. 我们的方案</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

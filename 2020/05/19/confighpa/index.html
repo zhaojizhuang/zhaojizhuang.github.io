@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="HPA介绍HPA, Pod 水平自动伸缩（Horizontal Pod Autoscaler）特性， 可以基于CPU利用率自动伸缩 replication controller、deployment和 replica set 中的 pod 数量，（除了 CPU 利用率）也可以 基于其他应程序提供的度量指标custom metrics。 pod 自动缩放不适用于无法缩放的对象，比如 DaemonSe">
+<meta name="keywords" content="k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自行配置你的HPA扩缩容速率">
+<meta property="og:url" content="https://chumper.cn/2020/05/19/confighpa/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="HPA介绍HPA, Pod 水平自动伸缩（Horizontal Pod Autoscaler）特性， 可以基于CPU利用率自动伸缩 replication controller、deployment和 replica set 中的 pod 数量，（除了 CPU 利用率）也可以 基于其他应程序提供的度量指标custom metrics。 pod 自动缩放不适用于无法缩放的对象，比如 DaemonSe">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-07-28T09:43:32.015Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自行配置你的HPA扩缩容速率">
+<meta name="twitter:description" content="HPA介绍HPA, Pod 水平自动伸缩（Horizontal Pod Autoscaler）特性， 可以基于CPU利用率自动伸缩 replication controller、deployment和 replica set 中的 pod 数量，（除了 CPU 利用率）也可以 基于其他应程序提供的度量指标custom metrics。 pod 自动缩放不适用于无法缩放的对象，比如 DaemonSe">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2020/05/19/confighpa/">
+
+
+
+
+
+
+  <title>自行配置你的HPA扩缩容速率 | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/_book/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2020/05/19/confighpa/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">自行配置你的HPA扩缩容速率</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-19T18:16:18+08:00">
+                2020-05-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="HPA介绍"><a href="#HPA介绍" class="headerlink" title="HPA介绍"></a>HPA介绍</h2><p>HPA, Pod 水平自动伸缩（Horizontal Pod Autoscaler）特性， 可以基于CPU利用率自动伸缩 replication controller、deployment和 replica set 中的 pod 数量，（除了 CPU 利用率）也可以 基于其他应程序提供的度量指标custom metrics。 pod 自动缩放不适用于无法缩放的对象，比如 DaemonSets。</p>
+<p>Pod 水平自动伸缩特性由 Kubernetes API 资源和控制器实现。资源决定了控制器的行为。 控制器会周期性的获取平均 CPU 利用率，并与目标值相比较后来调整 replication controller 或 deployment 中的副本数量。</p>
+<blockquote>
+<p><a href="https://kubernetes.io/zh/docs/tasks/run-application/horizontal-pod-autoscale/#pod-%e6%b0%b4%e5%b9%b3%e8%87%aa%e5%8a%a8%e4%bc%b8%e7%bc%a9%e5%b7%a5%e4%bd%9c%e6%9c%ba%e5%88%b6" target="_blank" rel="noopener">官网文档</a> </p>
+</blockquote>
+<p><strong>HPA 工作机制</strong></p>
+<p>关于 HPA 的原理可以看下 baxiaoshi的云原生学习笔记 <a href="https://www.yuque.com/baxiaoshi/tyado3/yw9deb" target="_blank" rel="noopener">https://www.yuque.com/baxiaoshi/tyado3/yw9deb</a>,本文不做过多介绍，只介绍自行配置hpa特性</p>
+<p><code>HPA</code> 是由 <code>hpacontroller</code> 来实现的, 通过  <code>--horizontal-pod-autoscaler-sync-period</code> 参数 指定周期（默认值为15秒）</p>
+<p>一个HPA的例子如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">autoscaling/v2beta2</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">HorizontalPodAutoscaler</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">php-apache</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  scaleTargetRef:</span></span><br><span class="line"><span class="attr">    apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">php-apache</span></span><br><span class="line"><span class="attr">  minReplicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  maxReplicas:</span> <span class="number">10</span></span><br><span class="line"><span class="attr">  metrics:</span></span><br><span class="line"><span class="attr">  - type:</span> <span class="string">Resource</span></span><br><span class="line"><span class="attr">    resource:</span></span><br><span class="line"><span class="attr">      name:</span> <span class="string">cpu</span></span><br><span class="line"><span class="attr">      target:</span></span><br><span class="line"><span class="attr">        type:</span> <span class="string">Utilization</span></span><br><span class="line"><span class="attr">        averageUtilization:</span> <span class="number">50</span></span><br><span class="line"><span class="attr">status:</span></span><br><span class="line"><span class="attr">  observedGeneration:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  lastScaleTime:</span> <span class="string">&lt;some-time&gt;</span></span><br><span class="line"><span class="attr">  currentReplicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  desiredReplicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  currentMetrics:</span></span><br><span class="line"><span class="attr">  - type:</span> <span class="string">Resource</span></span><br><span class="line"><span class="attr">    resource:</span></span><br><span class="line"><span class="attr">      name:</span> <span class="string">cpu</span></span><br><span class="line"><span class="attr">      current:</span></span><br><span class="line"><span class="attr">        averageUtilization:</span> <span class="number">0</span></span><br><span class="line"><span class="attr">        averageValue:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前面已经介绍了 <code>HPA</code> 的相关信息，相信大家都对 <code>HPA</code> 有了简单的了解, 当使用 <code>Horizontal Pod Autoscaler</code> 管理一组副本缩放时， <strong>有可能因为指标动态的变化造成副本数量频繁的变化，有时这被称为 抖动</strong>。为了避免这种情况，社区引入了 延迟时间的设置，<em>该配置是针对整个集群的配置，不能对应用粒度进行配置</em></p>
+<p><code>--horizontal-pod-autoscaler-downscale-stabilization:</code> 这个 <code>kube-controller-manager</code> 的参数表示缩容冷却时间。 即自从上次缩容执行结束后，多久可以再次执行缩容，默认时间是5分钟(5m0s)。`</p>
+<p>注意：这个配置是集群级别的，只能配置整个集群的扩缩容速率，用户不能自行配置自己的应用扩缩容速率：</p>
+<p>考虑一下场景的应用：</p>
+<ul>
+<li>对于大流量的的web应用。需要非常快的扩容速率，缓慢的缩容速率（为了迎接下一个流量高峰）</li>
+<li>对于处理数据类的应用。需要尽快的扩容（减少处理数据的时间），并尽快缩容（降低成本）</li>
+<li>对于处理常规流量和数据的应用，按照常规的方式配置就可以了</li>
+</ul>
+<p>对于上述3种应用场景，1.17以前的集群是不能支持，这也导致了一些未解决的 <code>issue</code>：</p>
+<ul>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/39090" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/39090</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/65097" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/65097</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/69428" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/69428</a></li>
+</ul>
+<p>为此社区 在<code>1.18</code>引入了 能自行配置<code>HPA</code>速率的新特性 见 相关 <a href="https://github.com/kubernetes/enhancements/blob/master/keps/sig-autoscaling/20190307-configurable-scale-velocity-for-hpa.md" target="_blank" rel="noopener">keps</a></p>
+<h2 id="原理介绍"><a href="#原理介绍" class="headerlink" title="原理介绍"></a>原理介绍</h2><p>为了自定义扩缩容行为，需要给单个 <code>hpa</code> 对象添加一个 <code>behavior</code>字段，如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">autoscaling/v2beta2</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">HorizontalPodAutoscaler</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">php-apache</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="string">***</span></span><br><span class="line"><span class="attr">  behavior:</span></span><br><span class="line"><span class="attr">      scaleUp:</span></span><br><span class="line"><span class="attr">        policies:</span></span><br><span class="line"><span class="attr">        - type:</span> <span class="string">percent</span></span><br><span class="line"><span class="attr">          value:</span> <span class="number">900</span><span class="string">%</span></span><br><span class="line"><span class="attr">      scaleDown:</span></span><br><span class="line"><span class="attr">        policies:</span></span><br><span class="line"><span class="attr">        - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">          value:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">          periodSeconds:</span> <span class="number">600</span> <span class="comment"># (i.e., scale down one pod every 10 min)</span></span><br><span class="line"><span class="attr">  metrics:</span></span><br><span class="line">    <span class="string">***</span></span><br></pre></td></tr></table></figure>
+<p>其中 <code>behavior</code> 字段 包含 如下对象：</p>
+<ul>
+<li><code>scaleUp</code> 配置扩容时的规则。<ul>
+<li><code>stabilizationWindowSeconds</code>： -该值表示 <code>HPA</code> 控制器应参考的采样时间，以防止副本数量波动。</li>
+<li><code>selectPolicy</code>：可以是<code>min</code>或<code>max</code>,用于选择 <code>policies</code> 中的最大值还是最小值。默认为 <code>max</code>。</li>
+<li><code>policies</code>： 是一个数组，每个元素有如下字段：<ul>
+<li><code>type</code>： 可为<code>pods</code>或者<code>percent</code>（以Pod的绝对数量或当前副本的百分比表示）。</li>
+<li><code>periodSeconds</code> 规则应用的时间范围（以秒为单位），即每多少秒扩缩容一次。</li>
+<li><code>value</code>: 规则的值，设为0 表示禁止 扩容或者缩容</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>scaleDown</code> 与 <code>scaleUp</code> 类似，指定的是缩容的规则。</li>
+</ul>
+<p>用户通过控制 HPA中指定参数，来控制HPA扩缩容的逻辑</p>
+<p><code>selectPolicy</code> 字段指示应应用的策略。默认情况下为max，也就是：<strong>将使用尽可能扩大副本的最大数量，而选择尽可能减少副本的最小数量。</strong> 有点绕没关系，待会看下面的例子</p>
+<h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><h3 id="场景1：尽可能快的扩容"><a href="#场景1：尽可能快的扩容" class="headerlink" title="场景1：尽可能快的扩容"></a>场景1：尽可能快的扩容</h3><blockquote>
+<p>这种模式适合流量增速比较快的场景</p>
+</blockquote>
+<p>HPA的配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleUp:</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">percent</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">900</span><span class="string">%</span></span><br></pre></td></tr></table></figure>
+<p><code>900%</code> 表示可以扩容的数量为当前副本数量的9倍，也就是可以扩大到当前副本数量的10倍，其他值都是默认值</p>
+<p>如果应用一个开始的pod数为1，那么扩容过程中 pod数量如下：</p>
+<p><code>1 -&gt; 10 -&gt; 100 -&gt; 1000</code></p>
+<p>scaleDown没有配置，表示该应用缩容将按照常规方式进行 可参考对应的<a href="https://v1-14.docs.kubernetes.io/zh/docs/tasks/run-application/horizontal-pod-autoscale/#%E7%AE%97%E6%B3%95%E7%BB%86%E8%8A%82" target="_blank" rel="noopener">扩缩容算法</a> </p>
+<h3 id="场景2：尽可能快的扩容，然后慢慢缩容"><a href="#场景2：尽可能快的扩容，然后慢慢缩容" class="headerlink" title="场景2：尽可能快的扩容，然后慢慢缩容"></a>场景2：尽可能快的扩容，然后慢慢缩容</h3><blockquote>
+<p>这种模式适合不想快速缩容的场景</p>
+</blockquote>
+<p>HPA的配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleUp:</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">percent</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">900</span><span class="string">%</span></span><br><span class="line"><span class="attr">  scaleDown:</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">      periodSeconds:</span> <span class="number">600</span> <span class="comment"># (i.e., 每隔10分钟缩容一个pod)</span></span><br></pre></td></tr></table></figure>
+<p>这种配置扩容场景同 场景1，缩容场景下却是不同的，这里配置的是每隔10分钟缩容一个pod</p>
+<p>假如说扩容之后有1000个pod，那么缩容过程中pod数量如下：</p>
+<p><code>1000 -&gt; 1000 -&gt; 1000 -&gt; … (7 more min) -&gt; 999</code></p>
+<h3 id="场景3：慢慢扩容，按常规缩容"><a href="#场景3：慢慢扩容，按常规缩容" class="headerlink" title="场景3：慢慢扩容，按常规缩容"></a>场景3：慢慢扩容，按常规缩容</h3><blockquote>
+<p>这种模式适合不太激进的扩容</p>
+</blockquote>
+<p>HPA的配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleUp:</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>如果应用一个开始的pod数为1，那么扩容过程中 pod数量如下：</p>
+<p><code>1 -&gt; 2 -&gt; 3 -&gt; 4</code></p>
+<p>同样，scaleDown没有配置，表示该应用缩容将按照常规方式进行 可参考对应的<a href="https://v1-14.docs.kubernetes.io/zh/docs/tasks/run-application/horizontal-pod-autoscale/#%E7%AE%97%E6%B3%95%E7%BB%86%E8%8A%82" target="_blank" rel="noopener">扩缩容算法</a> </p>
+<h3 id="场景4：-常规扩容，禁止缩容"><a href="#场景4：-常规扩容，禁止缩容" class="headerlink" title="场景4： 常规扩容，禁止缩容"></a>场景4： 常规扩容，禁止缩容</h3><blockquote>
+<p>这种模式适用于 不允许应用缩容，或者你想单独控制应用的缩容的场景</p>
+</blockquote>
+<p>HPA的配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleDown:</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<p>副本数量将按照常规方式扩容，不会发生缩容</p>
+<h3 id="场景5：延迟缩容"><a href="#场景5：延迟缩容" class="headerlink" title="场景5：延迟缩容"></a>场景5：延迟缩容</h3><blockquote>
+<p>这种模式适用于 用户并不想立即缩容，而是想等待更大的负载时间到来，再计算缩容情况</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleDown:</span></span><br><span class="line"><span class="attr">    stabilizationWindowSeconds:</span> <span class="number">600</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>这种配置情况下 <code>hpa</code> 缩容策略行为如下：</p>
+<ul>
+<li>会采集最近 <code>600s</code> 的（默认300s）的缩容建议，类似于滑动窗口</li>
+<li>选择最大的那个</li>
+<li>按照不大于每秒5个pod的速率缩容</li>
+</ul>
+<p>假如 <code>CurReplicas = 10</code> , <code>HPA controller</code> 每 <code>1min</code> 处理一次:</p>
+<ul>
+<li>前 9 min,算法只会收集扩缩容建议，而不会发生真正的扩缩容，假设 有如下 扩缩容建议：<br>  <code>recommendations = [10, 9, 8, 9, 9, 8, 9, 8, 9]</code></li>
+<li>第 10 min，我们增加一个扩缩容建议，比如说是 <code>8</code><br>  <code>recommendations = [10, 9, 8, 9, 9, 8, 9, 8, 9，8]</code><br>  HPA 算法会取其中最大的一个 <code>10</code>，因此应用不会发生缩容，<code>repicas</code> 的值不变</li>
+<li>第 11 min，我们增加一个扩缩容建议，比如 <code>7</code>，维持 <code>600s</code> 的滑动窗口，因此需要把第一个 <code>10</code> 去掉，如下：<br>  <code>recommendations = [9, 8, 9, 9, 8, 9, 8, 9, 8, 7]</code><br>  HPA 算法会取最大的一个 <code>9</code>, 应用副本数量变化： <code>10 -&gt; 9</code></li>
+</ul>
+<h3 id="场景6：-避免错误的扩容"><a href="#场景6：-避免错误的扩容" class="headerlink" title="场景6： 避免错误的扩容"></a>场景6： 避免错误的扩容</h3><blockquote>
+<p>这种模式在数据处理流中比较常见，用户想要根据队列中的数据来扩容，当数据较多时快速扩容。当指标有抖动时并不想扩容</p>
+</blockquote>
+<p>HPA的配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">behavior:</span></span><br><span class="line"><span class="attr">  scaleUp:</span></span><br><span class="line"><span class="attr">    stabilizationWindowSeconds:</span> <span class="number">300</span></span><br><span class="line"><span class="attr">    policies:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">pods</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">20</span></span><br></pre></td></tr></table></figure>
+<p>这种配置情况下 <code>hpa</code> 扩容策略行为如下：</p>
+<ul>
+<li>会采集最近 <code>300s</code> 的（默认0s）的扩容建议，类似于滑动窗口</li>
+<li>选择最小的那个</li>
+<li>按照不大于每秒20个pod的速率扩容</li>
+</ul>
+<p>假如 <code>CurReplicas = 2</code> , <code>HPA controller</code> 每 <code>1min</code> 处理一次:</p>
+<ul>
+<li>前 5 min,算法只会收集扩缩容建议，而不会发生真正的扩缩容，假设 有如下 扩缩容建议：<br>  <code>recommendations = [2, 3, 19, 10, 3]</code></li>
+<li>第 6 min，我们增加一个扩缩容建议，比如说是 <code>4</code><br>  <code>recommendations = [2, 3, 19, 10, 3, 4]</code><br>  HPA 算法会取其中最小的一个 <code>2</code>，因此应用不会发生缩容，<code>repicas</code> 的值不变</li>
+<li>第 11 min，我们增加一个扩缩容建议，比如 <code>7</code>，维持 <code>300s</code> 的滑动窗口，因此需要把第一个 <code>2</code> 去掉，如下：<br>  <code>recommendations = [3, 19, 10, 3, 4，7]</code><br>  HPA 算法会取最小的一个 <code>3</code>, 应用副本数量变化： <code>2 -&gt; 3</code></li>
+</ul>
+<h2 id="算法原理"><a href="#算法原理" class="headerlink" title="算法原理"></a>算法原理</h2><p>算法的伪代码如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">//  HPA controller 中的for循环</span></span><br><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line">    desiredReplicas = AnyAlgorithmInHPAController(...)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 扩容场景</span></span><br><span class="line">    <span class="keyword">if</span> desiredReplicas &gt; curReplicas &#123;</span><br><span class="line">      replicas = []<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">      <span class="keyword">for</span> _, policy := <span class="keyword">range</span> behavior.ScaleUp.Policies &#123;</span><br><span class="line">        <span class="keyword">if</span> policy.<span class="keyword">type</span> == <span class="string">"pods"</span> &#123;</span><br><span class="line">          replicas = <span class="built_in">append</span>(replicas, CurReplicas + policy.Value)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> policy.<span class="keyword">type</span> == <span class="string">"percent"</span> &#123;</span><br><span class="line">          replicas = <span class="built_in">append</span>(replicas, CurReplicas * (<span class="number">1</span> + policy.Value/<span class="number">100</span>))</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> behavior.ScaleUp.selectPolicy == <span class="string">"max"</span> &#123;</span><br><span class="line">        scaleUpLimit = max(replicas)</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        scaleUpLimit = min(replicas)</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 这里的min可以理解为 尽量维持原状，即如果是扩容，尽量取最小的那个</span></span><br><span class="line">      limitedReplicas = min(max, desiredReplicas)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 缩容场景</span></span><br><span class="line">    <span class="keyword">if</span> desiredReplicas &lt; curReplicas &#123;</span><br><span class="line">      <span class="keyword">for</span> _, policy := <span class="keyword">range</span> behaviro.scaleDown.Policies &#123;</span><br><span class="line">        replicas = []<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">        <span class="keyword">if</span> policy.<span class="keyword">type</span> == <span class="string">"pods"</span> &#123;</span><br><span class="line">          replicas = <span class="built_in">append</span>(replicas, CurReplicas - policy.Value)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> policy.<span class="keyword">type</span> == <span class="string">"percent"</span> &#123;</span><br><span class="line">          replicas = <span class="built_in">append</span>(replicas, CurReplicas * (<span class="number">1</span> - policy.Value /<span class="number">100</span>))</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> behavior.ScaleDown.SelectPolicy == <span class="string">"max"</span> &#123;</span><br><span class="line">          scaleDownLimit = min(replicas)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          scaleDownLimit = max(replicas)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 这里的max可以理解为 尽量维持原状，即如果是缩容，尽量取最大的那个</span></span><br><span class="line">        limitedReplicas = max(min, desiredReplicas)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    storeRecommend(limitedReplicas, scaleRecommendations)</span><br><span class="line">    <span class="comment">// 选择合适的扩缩容副本</span></span><br><span class="line">    nextReplicas := applyRecommendationIfNeeded(scaleRecommendations)</span><br><span class="line">    <span class="comment">// 扩缩容</span></span><br><span class="line">    setReplicas(nextReplicas)</span><br><span class="line">    sleep(ControllerSleepTime)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="默认值"><a href="#默认值" class="headerlink" title="默认值"></a>默认值</h2><p>为了平滑得扩速容，默认值是有必要的<br><code>behavior</code> 的默认值如下：</p>
+<ul>
+<li>behavior.scaleDown.stabilizationWindowSeconds = 300, 缩容情况下默认等待 5 min中再缩容.</li>
+<li>behavior.scaleUp.stabilizationWindowSeconds = 0, 扩容时立即扩容，不等待</li>
+<li>behavior.scaleUp.policies 默认值如下：<ul>
+<li>百分比策略<ul>
+<li>policy = <code>percent</code></li>
+<li>periodSeconds = <code>60</code>, 扩容间隔为 1min</li>
+<li>value = <code>100</code> 每次最多扩容翻倍</li>
+</ul>
+</li>
+<li>Pod个数策略<ul>
+<li>policy = <code>pods</code></li>
+<li>periodSeconds = <code>60</code>, 扩容间隔为 1min</li>
+<li>value = <code>4</code> 每次最多扩容4个</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>behavior.scaleDown.policies 默认值如下：<ul>
+<li>百分比策略<ul>
+<li>policy = <code>percent</code></li>
+<li>periodSeconds = <code>60</code> 缩容间隔为 1min</li>
+<li>value = <code>100</code> 一次缩容最多可以把所有的示例都干掉</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2020/05/19/confighpa/" title="自行配置你的HPA扩缩容速率">https://chumper.cn/2020/05/19/confighpa/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/12/neicunguanliyufenpei/" rel="next" title="Go 内存管理">
+                <i class="fa fa-chevron-left"></i> Go 内存管理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/07/30/cilium-bpm/" rel="prev" title="[译][转]Cilium：BPF 和 XDP 参考指南">
+                [译][转]Cilium：BPF 和 XDP 参考指南 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#HPA介绍"><span class="nav-number">1.</span> <span class="nav-text">HPA介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">2.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原理介绍"><span class="nav-number">3.</span> <span class="nav-text">原理介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#场景"><span class="nav-number">4.</span> <span class="nav-text">场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#场景1：尽可能快的扩容"><span class="nav-number">4.1.</span> <span class="nav-text">场景1：尽可能快的扩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#场景2：尽可能快的扩容，然后慢慢缩容"><span class="nav-number">4.2.</span> <span class="nav-text">场景2：尽可能快的扩容，然后慢慢缩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#场景3：慢慢扩容，按常规缩容"><span class="nav-number">4.3.</span> <span class="nav-text">场景3：慢慢扩容，按常规缩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#场景4：-常规扩容，禁止缩容"><span class="nav-number">4.4.</span> <span class="nav-text">场景4： 常规扩容，禁止缩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#场景5：延迟缩容"><span class="nav-number">4.5.</span> <span class="nav-text">场景5：延迟缩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#场景6：-避免错误的扩容"><span class="nav-number">4.6.</span> <span class="nav-text">场景6： 避免错误的扩容</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#算法原理"><span class="nav-number">5.</span> <span class="nav-text">算法原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#默认值"><span class="nav-number">6.</span> <span class="nav-text">默认值</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

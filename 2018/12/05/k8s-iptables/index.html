@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,iptables,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="iptables规则 参考 http://www.zsythink.net/archives/tag/iptables/   用户空间，例如从pod中流出的流量就是从ouput链流出 上图表示的iptables的链，链 和表的关系如下，以PREROUTING链为例  这幅图是什么意思呢？它的意思是说，prerouting”链”只拥有nat表、raw表和mangle表所对应的功能，所以，prerou">
+<meta name="keywords" content="k8s,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes&amp;容器网络（2）之iptables">
+<meta property="og:url" content="https://chumper.cn/2018/12/05/k8s-iptables/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="iptables规则 参考 http://www.zsythink.net/archives/tag/iptables/   用户空间，例如从pod中流出的流量就是从ouput链流出 上图表示的iptables的链，链 和表的关系如下，以PREROUTING链为例  这幅图是什么意思呢？它的意思是说，prerouting”链”只拥有nat表、raw表和mangle表所对应的功能，所以，prerou">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zsythink.net/wp-content/uploads/2017/02/021217_0051_2.png">
+<meta property="og:image" content="http://www.zsythink.net/wp-content/uploads/2017/02/021217_0051_4.png">
+<meta property="og:updated_time" content="2020-07-28T09:43:32.016Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes&amp;容器网络（2）之iptables">
+<meta name="twitter:description" content="iptables规则 参考 http://www.zsythink.net/archives/tag/iptables/   用户空间，例如从pod中流出的流量就是从ouput链流出 上图表示的iptables的链，链 和表的关系如下，以PREROUTING链为例  这幅图是什么意思呢？它的意思是说，prerouting”链”只拥有nat表、raw表和mangle表所对应的功能，所以，prerou">
+<meta name="twitter:image" content="http://www.zsythink.net/wp-content/uploads/2017/02/021217_0051_2.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2018/12/05/k8s-iptables/">
+
+
+
+
+
+
+  <title>kubernetes&容器网络（2）之iptables | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/_book/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2018/12/05/k8s-iptables/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kubernetes&容器网络（2）之iptables</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-05T13:19:10+08:00">
+                2018-12-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="iptables规则"><a href="#iptables规则" class="headerlink" title="iptables规则"></a>iptables规则</h2><blockquote>
+<p>参考 <a href="http://www.zsythink.net/archives/tag/iptables/" target="_blank" rel="noopener">http://www.zsythink.net/archives/tag/iptables/</a></p>
+</blockquote>
+<p><img src="http://www.zsythink.net/wp-content/uploads/2017/02/021217_0051_2.png" alt=""></p>
+<p><strong>用户空间，例如从pod中流出的流量就是从ouput链流出</strong></p>
+<p>上图表示的<code>iptables</code>的链，链 和表的关系如下，以<code>PREROUTING</code>链为例</p>
+<p><img src="http://www.zsythink.net/wp-content/uploads/2017/02/021217_0051_4.png" alt=""></p>
+<p>这幅图是什么意思呢？它的意思是说，prerouting”链”只拥有nat表、raw表和mangle表所对应的功能，所以，prerouting中的规则只能存放于nat表、raw表和mangle表中。</p>
+<h2 id="NAT"><a href="#NAT" class="headerlink" title="NAT"></a>NAT</h2><p><strong>NAT的三种类型:</strong></p>
+<ul>
+<li><p>SNAT  </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">iptables -t nat -A POSTROUTING -s 10.8.0.0/255.255.255.0 -o eth0 -j SNAT --to-source192.168.5.3</span><br><span class="line"><span class="meta">#</span><span class="bash"> 目标流向eth0，源地址是xxx的，做SNAT，源地址改为xxx</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>DNAT</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">iptables-t nat -A POSTROUTING -s 10.8.0.0/255.255.255.0 -o eth0 -j SNAT --to-source192.168.5.3-192.168.5.5</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>MASQUERADE 是SNAT的一种，可以自动获取网卡的ip来做SNAT，如果是ADSL这种动态ip的，如果用SNAT需要经常更改iptables规则 </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">iptables-t nat -A POSTROUTING -s 10.8.0.0/255.255.255.0 -o eth0 -j MASQUERADE</span><br><span class="line"><span class="meta">#</span><span class="bash"> 源地址是xxx，流向eth0的，流向做自动化SNAT</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p><em>masquerade</em> 应为英文伪装</p>
+<h2 id="iptabels-常用命令"><a href="#iptabels-常用命令" class="headerlink" title="iptabels 常用命令"></a>iptabels 常用命令</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">iptables [-t 表名] 管理选项 [链名] [匹配条件] [-j 控制类型]</span><br><span class="line"><span class="meta">#</span><span class="bash"> 控制类型包括 ACCETP REJECT DROP LOG 还有自定义的链（k8s的链）等</span></span><br><span class="line">iptabels -t nat（表名） -nvL POSTROUTING(链的名字)</span><br></pre></td></tr></table></figure>
+<p><a href="https://www.jianshu.com/p/ee4ee15d3658" target="_blank" rel="noopener">https://www.jianshu.com/p/ee4ee15d3658</a></p>
+<h2 id="分析k8s下的iptables规则"><a href="#分析k8s下的iptables规则" class="headerlink" title="分析k8s下的iptables规则"></a>分析k8s下的iptables规则</h2><p>以如下 <code>service</code> 为例 </p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">Name:</span>                     <span class="string">testapi-smzdm-com</span></span><br><span class="line"><span class="attr">Namespace:</span>                <span class="string">zhongce-v2-0</span></span><br><span class="line"><span class="attr">Labels:</span>                   <span class="string">&lt;none&gt;</span></span><br><span class="line"><span class="attr">Selector:</span>                 <span class="string">zdm-app-owner=testapi-smzdm-com</span></span><br><span class="line"><span class="attr">Type:</span>                     <span class="string">LoadBalancer</span></span><br><span class="line"><span class="attr">IP:</span>                       <span class="number">172.17</span><span class="number">.185</span><span class="number">.22</span></span><br><span class="line"><span class="string">LoadBalancer</span> <span class="attr">Ingress:</span>     <span class="number">10.42</span><span class="number">.162</span><span class="number">.216</span></span><br><span class="line"><span class="attr">Port:</span>                     <span class="string">&lt;unset&gt;</span>  <span class="number">809</span><span class="string">/TCP</span></span><br><span class="line"><span class="attr">TargetPort:</span>               <span class="number">809</span><span class="string">/TCP</span></span><br><span class="line"><span class="attr">NodePort:</span>                 <span class="string">&lt;unset&gt;</span>  <span class="number">39746</span><span class="string">/TCP</span></span><br><span class="line"><span class="attr">Endpoints:</span>                <span class="number">10.42</span><span class="number">.147</span><span class="number">.255</span><span class="string">:809,10.42.38.222:809</span></span><br><span class="line"><span class="string">Session</span> <span class="attr">Affinity:</span>         <span class="string">None</span></span><br><span class="line"><span class="string">External</span> <span class="string">Traffic</span> <span class="attr">Policy:</span>  <span class="string">Cluster</span></span><br><span class="line"><span class="attr">Events:</span>                   <span class="string">&lt;none&gt;</span></span><br></pre></td></tr></table></figure>
+<p>即 <code>cluster ip</code> 为 <code>172.17.185.22</code> 后端 <code>podip</code> 为 <code>10.42.147.25510.42.38.222</code><br>此外还有1个 <code>loadbalancer ip</code> <code>10.42.162.216</code></p>
+<h3 id="svc的访问路径"><a href="#svc的访问路径" class="headerlink" title="svc的访问路径"></a>svc的访问路径</h3><pre><code>- 集群内部，通过 `clusterip` 到访问到后端 `pod
+- 集群外部，通过直接访问`nodeport`；或者通过 `elb` 负载均衡到 `node` 上再通过 `nodeport` 访问
+</code></pre><h3 id="cluster-ip-的基本原理"><a href="#cluster-ip-的基本原理" class="headerlink" title="cluster ip 的基本原理"></a>cluster ip 的基本原理</h3><p>如果是集群内的应用访问 cluster ip，那就是从<strong>用户空间</strong>访问<strong>内核空间网络协议栈</strong>,走的是 <code>OUTPUT</code> 链</p>
+<ol>
+<li>从<code>OUTPUT</code> 链开始</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL OUTPUT</span><br><span class="line">Chain OUTPUT (policy ACCEPT 4 packets, 240 bytes)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">3424K  209M KUBE-SERVICES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li><code>OUTPUT</code>下的规则 直接把流量交给 <code>KUBE-SERVICES</code> 链</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-SERVICES</span><br><span class="line">Chain KUBE-SERVICES (2 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination     </span><br><span class="line">    0     0 KUBE-MARK-MASQ  tcp  --  *      *      0.0.0.0/0        172.17.185.22        /* zhongce-v2-0/testapi-smzdm-com: cluster IP */ tcp dpt:809</span><br><span class="line">    0     0 KUBE-SVC-G3OM5DSD2HHDMN6U  tcp  --  *      *       0.0.0.0/0            172.17.185.22        /* zhongce-v2-0/testapi-smzdm-com: cluster IP */ tcp dpt:809</span><br><span class="line">   10   520 KUBE-FW-G3OM5DSD2HHDMN6U  tcp  --  *      *       0.0.0.0/0            10.42.162.216        /* zhongce-v2-0/testapi-smzdm-com: loadbalancer IP */ tcp dpt:809</span><br><span class="line">     0     0 KUBE-NODEPORTS  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service nodeports; NOTE: this must be the last rule in this chain */ ADDRTY</span><br></pre></td></tr></table></figure>
+<p>上述3条规则是顺序执行的：</p>
+<ul>
+<li>第1条规则匹配发往 <code>Cluster IP</code> <code>172.17.185.22</code> 的流量，跳转到了 <code>KUBE-MARK-MASQ</code> 链进一步处理，其作用就是打了一个 <code>MARK</code> ，稍后展开说明。</li>
+<li>第2条规则匹配发往 <code>Cluster IP</code> <code>172.17.185.22</code> 的流量，跳转到了 <code>KUBE-SVC-G3OM5DSD2HHDMN6U</code> 链进一步处理，稍后展开说明。</li>
+<li>第3条规则匹配发往集群外 <code>LB IP</code> 的 <code>10.42.162.216</code> 的流量，跳转到了<br><code>KUBE-FW-G3OM5DSD2HHDMN6U</code> 链进一步处理，稍后展开说明。</li>
+<li>第4条  KUBE-NODEPORTS的规则在末尾，只要dst ip是node 本机ip的话 （（–dst-type LOCAL），就跳转到KUBE-NODEPORTS做进一步判定：）<br>  <strong>第2条规则要做dnat转发到后端具体的后端pod上</strong></li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-SVC-G3OM5DSD2HHDMN6U</span><br><span class="line">Chain KUBE-SVC-G3OM5DSD2HHDMN6U (3 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">   18   936 KUBE-SEP-JT2KW6YUTVPLLGV6  all  --  *      *       0.0.0.0/0            0.0.0.0/0            statistic mode random probability 0.50000000000</span><br><span class="line">   21  1092 KUBE-SEP-VETLC6CJY2HOK3EL  all  --  *      *       0.0.0.0/0            0.0.0.0/0</span><br></pre></td></tr></table></figure>
+<p><strong>两条 对应 后端pod的链</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-SEP-JT2KW6YUTVPLLGV6</span><br><span class="line">Chain KUBE-SEP-JT2KW6YUTVPLLGV6 (1 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">    0     0 KUBE-MARK-MASQ  all  --  *      *       10.42.147.255        0.0.0.0/0           </span><br><span class="line">   26  1352 DNAT       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp to:10.42.147.255:809</span><br><span class="line"></span><br><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-SEP-VETLC6CJY2HOK3EL</span><br><span class="line">Chain KUBE-SEP-VETLC6CJY2HOK3EL (1 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">    0     0 KUBE-MARK-MASQ  all  --  *      *       10.42.38.222         0.0.0.0/0           </span><br><span class="line">    2   104 DNAT       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp to:10.42.38.222:809</span><br></pre></td></tr></table></figure>
+<p>流量经过路由表从eth0出去，在流量流出本机之前会经过POSTROUTING 链</p>
+<h3 id="在流量离开本机的时候会经过-POSTROUTING-链"><a href="#在流量离开本机的时候会经过-POSTROUTING-链" class="headerlink" title="在流量离开本机的时候会经过 POSTROUTING 链"></a>在流量离开本机的时候会经过 <code>POSTROUTING</code> 链</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL POSTROUTING</span><br><span class="line">Chain POSTROUTING (policy ACCEPT 274 packets, 17340 bytes)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line"> 632M   36G KUBE-POSTROUTING  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes postrouting rules */</span><br><span class="line"></span><br><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-POSTROUTING</span><br><span class="line">Chain KUBE-POSTROUTING (1 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">  526 27352 MASQUERADE  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service traffic requiring SNAT */ mark match 0x4000/0x4000</span><br></pre></td></tr></table></figure>
+<p>其实直接就跳转到了 <code>KUBE-POSTROUTING</code>，然后匹配打过<code>0x4000 MARK</code> 的流量，将其做 <code>SNAT</code> 转换，而这个 <code>MARK</code> 其实就是之前没说的 <code>KUBE-MARK-MASQ</code> 做的事情</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-MARK-MASQ</span><br><span class="line">Chain KUBE-MARK-MASQ (183 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">  492 25604 MARK       all  --  *      *       0.0.0.0/0            0.0.0.0/0            MARK or 0x4000</span><br></pre></td></tr></table></figure>
+<p>当流量离开本机时，src IP会被修改为node的IP，而不是发出流量的POD IP了</p>
+<h3 id="通过loadbalance-ip进行访问"><a href="#通过loadbalance-ip进行访问" class="headerlink" title="通过loadbalance ip进行访问"></a>通过loadbalance ip进行访问</h3><p>最后还有一个KUBE-FW-G3OM5DSD2HHDMN6U链没有讲，从本机发往LB IP的流量要做啥事情呢？</p>
+<p><strong>其实也是让流量直接发往具体某个Endpoints，就别真的发往LB了，这样才能获得最佳的延迟</strong>：<br><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-FW-G3OM5DSD2HHDMN6U</span><br><span class="line">Chain KUBE-FW-G3OM5DSD2HHDMN6U (1 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination         </span><br><span class="line">    2   104 KUBE-MARK-MASQ  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* zhongce-v2-0/testapi-smzdm-com: loadbalancer IP */</span><br><span class="line">    2   104 KUBE-SVC-G3OM5DSD2HHDMN6U  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* zhongce-v2-0/testapi-smzdm-com: loadbalancer IP */</span><br><span class="line">    0     0 KUBE-MARK-DROP  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* zhongce-v2-0/testapi-smzdm-com: loadbalancer IP */</span><br></pre></td></tr></table></figure></p>
+<h3 id="通过nodeport-来访问"><a href="#通过nodeport-来访问" class="headerlink" title="通过nodeport 来访问"></a>通过nodeport 来访问</h3><p>回顾一下 KUBE_SERVICES规则</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-SERVICES</span><br><span class="line">Chain KUBE-SERVICES (2 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination     </span><br><span class="line">    0     0 KUBE-MARK-MASQ  tcp  --  *      *      !172.17.0.0/16        172.17.185.22        /* zhongce-v2-0/testapi-smzdm-com: cluster IP */ tcp dpt:809</span><br><span class="line">    0     0 KUBE-SVC-G3OM5DSD2HHDMN6U  tcp  --  *      *       0.0.0.0/0            172.17.185.22        /* zhongce-v2-0/testapi-smzdm-com: cluster IP */ tcp dpt:809</span><br><span class="line">   10   520 KUBE-FW-G3OM5DSD2HHDMN6U  tcp  --  *      *       0.0.0.0/0            10.42.162.216        /* zhongce-v2-0/testapi-smzdm-com: loadbalancer IP */ tcp dpt:809</span><br><span class="line">    0     0 KUBE-NODEPORTS  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service nodeports; NOTE: this must be the last rule in this chain */ ADDRTYPE match dst-type LOCAL</span><br></pre></td></tr></table></figure>
+<p><strong><code>KUBE-NODEPORTS</code> 是最后一条规则</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[root@10-42-8-102 ~]# iptables -t nat -nvL KUBE-NODEPORTS</span><br><span class="line">Chain KUBE-NODEPORTS (1 references)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination        </span><br><span class="line">    0     0 KUBE-MARK-MASQ  tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* zhongce-v2-0/testapi-smzdm-com: */ tcp dpt:39746</span><br><span class="line">    0     0 KUBE-SVC-G3OM5DSD2HHDMN6U  tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* zhongce-v2-0/testapi-smzdm-com: */ tcp dpt:39746</span><br></pre></td></tr></table></figure>
+<p>第1条匹配dst port如果是39746，那么就打mark。<br>第2条匹配dst port如果是39746，那么就跳到负载均衡链做DNAT改写。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><code>KUBE-SERVICES</code> 链的规则存在于 <code>OUTPUT POSTROUTING PREROUTING</code> 三个链上</li>
+<li>对于 <code>KUBE-SERVICES KUBE-NDOEPORTS-xxx KUBE-SEP-xxx</code> 下都会对符合条件（匹配条件）的规则打上MARK 可以重复打MARK</li>
+<li>在流量出node的时候做SNAT</li>
+</ul>
+<h2 id="从集群内出去的流量怎么回来"><a href="#从集群内出去的流量怎么回来" class="headerlink" title="从集群内出去的流量怎么回来"></a>从集群内出去的流量怎么回来</h2><p>出node的流量在做SNAT的时候，netfilter有个连接跟踪机制，保存在 conntrack记录中</p>
+<p>这就是Netfilter的连接跟踪（conntrack）功能了。对于TCP协议来讲，肯定是上来先建立一个连接，可以用<code>源/目的IP+源/目的端口</code>  （四元组），唯一标识一条连接，这个连接会放在conntrack表里面。<br>当时是这台机器去请求163网站的，虽然源地址已经Snat成公网IP地址了，但是 <code>conntrack</code> 表里面还是有这个连接的记录的。当163网站返回数据的时候，会找到记录，从而找到正确的私网IP地<br>址。</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href="https://yuerblog.cc/2019/12/09/k8s-%E6%89%8B%E6%8A%8A%E6%89%8B%E5%88%86%E6%9E%90service%E7%94%9F%E6%88%90%E7%9A%84iptables%E8%A7%84%E5%88%99/" target="_blank" rel="noopener">k8s 的iptales规则详解</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2018/12/05/k8s-iptables/" title="kubernetes&容器网络（2）之iptables">https://chumper.cn/2018/12/05/k8s-iptables/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/28/k8s-svc/" rel="next" title="kubernetes&容器网络（1）之seivice">
+                <i class="fa fa-chevron-left"></i> kubernetes&容器网络（1）之seivice
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/05/go shen ru fen xi/" rel="prev" title="Go 学习笔记">
+                Go 学习笔记 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#iptables规则"><span class="nav-number">1.</span> <span class="nav-text">iptables规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NAT"><span class="nav-number">2.</span> <span class="nav-text">NAT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#iptabels-常用命令"><span class="nav-number">3.</span> <span class="nav-text">iptabels 常用命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析k8s下的iptables规则"><span class="nav-number">4.</span> <span class="nav-text">分析k8s下的iptables规则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#svc的访问路径"><span class="nav-number">4.1.</span> <span class="nav-text">svc的访问路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cluster-ip-的基本原理"><span class="nav-number">4.2.</span> <span class="nav-text">cluster ip 的基本原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在流量离开本机的时候会经过-POSTROUTING-链"><span class="nav-number">4.3.</span> <span class="nav-text">在流量离开本机的时候会经过 POSTROUTING 链</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过loadbalance-ip进行访问"><span class="nav-number">4.4.</span> <span class="nav-text">通过loadbalance ip进行访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过nodeport-来访问"><span class="nav-number">4.5.</span> <span class="nav-text">通过nodeport 来访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.6.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从集群内出去的流量怎么回来"><span class="nav-number">5.</span> <span class="nav-text">从集群内出去的流量怎么回来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">6.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

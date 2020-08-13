@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,容器网络,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="容器网络vxlanvxlan原理: VXLAN通过MAC-in-UDP的报文封装，实现了二层报文在三层网络上的透传,属于overlay网络 Flannel首先，flannel利用Kubernetes-API(这里就是取node.spec.podCIDR)或者etcd用于存储整个集群的网络配置，其中最主要的内容为设置集群的网络地址空间。例如，设定整个集群内所有容器的IP都取自网段“10.1.0.0/">
+<meta name="keywords" content="k8s,容器网络">
+<meta property="og:type" content="article">
+<meta property="og:title" content="容器网络">
+<meta property="og:url" content="https://chumper.cn/2018/10/25/container-network/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="容器网络vxlanvxlan原理: VXLAN通过MAC-in-UDP的报文封装，实现了二层报文在三层网络上的透传,属于overlay网络 Flannel首先，flannel利用Kubernetes-API(这里就是取node.spec.podCIDR)或者etcd用于存储整个集群的网络配置，其中最主要的内容为设置集群的网络地址空间。例如，设定整个集群内所有容器的IP都取自网段“10.1.0.0/">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/84/8d/84caa6dc3f9dcdf8b88b56bd2e22138d.png">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/e6/f0/e6827cecb75641d3c8838f2213543cf0.png">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/43/41/43f5ebb001145ecd896fd10fb27c5c41.png">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/ce/38/cefe6b99422fba768c53f0093947cd38.png">
+<meta property="og:updated_time" content="2020-07-28T09:43:32.015Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="容器网络">
+<meta name="twitter:description" content="容器网络vxlanvxlan原理: VXLAN通过MAC-in-UDP的报文封装，实现了二层报文在三层网络上的透传,属于overlay网络 Flannel首先，flannel利用Kubernetes-API(这里就是取node.spec.podCIDR)或者etcd用于存储整个集群的网络配置，其中最主要的内容为设置集群的网络地址空间。例如，设定整个集群内所有容器的IP都取自网段“10.1.0.0/">
+<meta name="twitter:image" content="https://static001.geekbang.org/resource/image/84/8d/84caa6dc3f9dcdf8b88b56bd2e22138d.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2018/10/25/container-network/">
+
+
+
+
+
+
+  <title>容器网络 | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/_book/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2018/10/25/container-network/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">容器网络</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-10-25T17:29:18+08:00">
+                2018-10-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="容器网络"><a href="#容器网络" class="headerlink" title="容器网络"></a>容器网络</h1><h2 id="vxlan"><a href="#vxlan" class="headerlink" title="vxlan"></a>vxlan</h2><p>vxlan原理: VXLAN通过MAC-in-UDP的报文封装，实现了二层报文在三层网络上的透传,属于overlay网络</p>
+<h2 id="Flannel"><a href="#Flannel" class="headerlink" title="Flannel"></a>Flannel</h2><p>首先，flannel利用<strong><code>Kubernetes-API(这里就是取node.spec.podCIDR)或者etcd</code></strong>用于存储整个集群的网络配置，其中最主要的内容为设置集群的网络地址空间。例如，设定整个集群内所有容器的IP都取自网段“10.1.0.0/16”。</p>
+<p>接着，flannel在每个主机中运行flanneld作为agent，它会为所在主机从集群的网络地址空间中，获取一个小的网段subnet，本主机内所有容器的IP地址都将从中分配。</p>
+<p><code>flannel</code> 的 <code>UDP</code> 模式和 <code>Vxlan</code> 模式 <code>host-gw</code> 模式</p>
+<ul>
+<li><code>UDP</code> 模式是 三层 <code>overlay</code>,即，将原始数据包的三层包（IP包）装在 <code>UDP</code> 包里,通过 ip+端口 传到目的地，ip为目标node ip 端口为目标节点上flanneld进程监听的8285端口，解析后传入flannel0设备进入内核网络协议栈，<br>UDP模式下 封包解包是在 flanneld里进行的也就是用户态下</li>
+</ul>
+<p><img src="https://static001.geekbang.org/resource/image/84/8d/84caa6dc3f9dcdf8b88b56bd2e22138d.png" alt=""></p>
+<p><img src="https://static001.geekbang.org/resource/image/e6/f0/e6827cecb75641d3c8838f2213543cf0.png" alt=""></p>
+<p><strong>重要！！！ 《深入解析kubernetes》</strong> 33章  <a href="https://time.geekbang.org/column/article/65287" target="_blank" rel="noopener">https://time.geekbang.org/column/article/65287</a></p>
+<ul>
+<li>VxLan 模式 是二层 <code>overlay</code>,即将原始Ethernet包（MAC包）封装起来，通过vtep设备发到目的vtep，vxlan是内核模块，vtep是flannneld创建的，vxlan封包解封完全是在内核态完成的</li>
+<li></li>
+</ul>
+<p><img src="https://static001.geekbang.org/resource/image/43/41/43f5ebb001145ecd896fd10fb27c5c41.png" alt=""></p>
+<ul>
+<li>注意点 <ul>
+<li>inner mac 为 目的vtep的mac</li>
+<li>outer ip为目的node的ip <strong>这一点和UDP有区别</strong><br>下一跳ip对应的mac地址是ARP表里记录的，inner mac对应的arp记录是 flanneld维护的，outer mac arp表是node自学习的</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://static001.geekbang.org/resource/image/ce/38/cefe6b99422fba768c53f0093947cd38.png" alt=""></p>
+<ul>
+<li><code>host-gw</code> 模式的工作原理,是在 节点上加路由表，其实就是将每个 Flannel 子网（Flannel Subnet，比如：10.244.1.0/24）的“下一跳”，设置成了该子网对应的宿主机的 IP 地址。<br>这台“主机”（Host）会充当这条容器通信路径里的“网关”（Gateway）。这也正是“host-gw”的含义。</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ip route</span></span><br><span class="line">...</span><br><span class="line">&lt;目的容器IP地址段&gt; via &lt;网关的IP地址&gt; dev eth0# 网关的 IP 地址，正是目的容器所在宿主机的 IP 地址</span><br></pre></td></tr></table></figure>
+<p><strong>Flannel host-gw 模式必须要求集群宿主机之间是二层连通的。如果分布在不同的子网里是不行的，只是三层可达</strong></p>
+<h3 id="POD-IP的分配"><a href="#POD-IP的分配" class="headerlink" title="POD IP的分配"></a>POD IP的分配</h3><h4 id="使用CNI后，即配置了-kubelet-的-network-plugin-cni，容器的IP分配："><a href="#使用CNI后，即配置了-kubelet-的-network-plugin-cni，容器的IP分配：" class="headerlink" title="使用CNI后，即配置了 kubelet 的 --network-plugin=cni，容器的IP分配："></a>使用CNI后，即配置了 <code>kubelet</code> 的 <code>--network-plugin=cni</code>，容器的IP分配：</h4><p>kubelet 先创建pause容器生成network namespace<br>调用 网络driver CNI driver<br>CNI driver 根据配置调用具体的cni 插件<br>cni 插件给pause 容器配置网络<br>pod 中其他的容器都使用 pause 容器的网络</p>
+<h4 id="CNM模式"><a href="#CNM模式" class="headerlink" title="CNM模式"></a>CNM模式</h4><p>Pod IP是docker engine分配的，Pod也是以docker0为网关，通过veth连接network namespace</p>
+<h4 id="flannel的两种方式-CNI-CNM总结"><a href="#flannel的两种方式-CNI-CNM总结" class="headerlink" title="flannel的两种方式 CNI CNM总结"></a>flannel的两种方式 CNI CNM总结</h4><p>CNI中，docker0的ip与Pod无关，Pod总是生成的时候才去动态的申请自己的IP，而CNM模式下，Pod的网段在docker engine启动时就已经决定。<br>CNI只是一个网络接口规范，各种功能都由插件实现，flannel只是插件的一种，而且docker也只是容器载体的一种选择，Kubernetes还可以使用其他的，</p>
+<h2 id="cluster-IP的分配"><a href="#cluster-IP的分配" class="headerlink" title="cluster IP的分配"></a>cluster IP的分配</h2><pre><code>是在kube-apiserver中 `pkg/registry/core/service/ipallocator`中分配的
+</code></pre><h2 id="network-policy"><a href="#network-policy" class="headerlink" title="network policy"></a>network policy</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ingress:</span></span><br><span class="line"><span class="attr">- from:</span></span><br><span class="line"><span class="attr">  - namespaceSelector:</span></span><br><span class="line"><span class="attr">      matchLabels:</span></span><br><span class="line"><span class="attr">        user:</span> <span class="string">alice</span></span><br><span class="line"><span class="attr">  - podSelector:</span></span><br><span class="line"><span class="attr">      matchLabels:</span></span><br><span class="line"><span class="attr">        role:</span> <span class="string">client</span></span><br></pre></td></tr></table></figure>
+<p>像上面这样定义的 namespaceSelector 和 podSelector，是“或”（OR）的关系，表示的是yaml数组里的两个元素</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ingress:</span></span><br><span class="line"><span class="attr">- from:</span></span><br><span class="line"><span class="attr">  - namespaceSelector:</span></span><br><span class="line"><span class="attr">      matchLabels:</span></span><br><span class="line"><span class="attr">        user:</span> <span class="string">alice</span></span><br><span class="line"><span class="attr">    podSelector:</span></span><br><span class="line"><span class="attr">      matchLabels:</span></span><br><span class="line"><span class="attr">        role:</span> <span class="string">client</span></span><br></pre></td></tr></table></figure>
+<p>像上面这样定义的 namespaceSelector 和 podSelector，是“与”（AND）的关系，yaml里表示的是一个数组元素的两个字段</p>
+<p>Kubernetes 网络插件对 Pod 进行隔离，其实是靠在宿主机上生成 NetworkPolicy 对应的 iptable 规则来实现的。</p>
+<h2 id="通过NodePort来访问service的话，client的源ip会被做SNAT"><a href="#通过NodePort来访问service的话，client的源ip会被做SNAT" class="headerlink" title="通过NodePort来访问service的话，client的源ip会被做SNAT"></a>通过NodePort来访问service的话，client的源ip会被做SNAT</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line">         <span class="string">client</span></span><br><span class="line">            <span class="string">\</span> <span class="string">^</span></span><br><span class="line">             <span class="string">\</span> <span class="string">\</span></span><br><span class="line">              <span class="string">v</span> <span class="string">\</span></span><br><span class="line">  <span class="string">node</span> <span class="number">1</span> <span class="string">&lt;---</span> <span class="string">node</span> <span class="number">2</span></span><br><span class="line">   <span class="string">| ^   SNAT</span></span><br><span class="line"><span class="string">   | |   ---&gt;</span></span><br><span class="line"><span class="string">   v |</span></span><br><span class="line"><span class="string">endpoint</span></span><br></pre></td></tr></table></figure>
+<p>流程：</p>
+<ul>
+<li>客户端发送数据包到 node2:nodePort</li>
+<li>node2 使用它自己的 IP 地址替换数据包的源 IP 地址（SNAT）</li>
+<li>node2 使用 pod IP 地址替换数据包的目的 IP 地址</li>
+<li>数据包被路由到 node 1，然后交给 endpoint</li>
+<li>Pod 的回复被路由回 node2</li>
+<li>Pod 的回复被发送回给客户端</li>
+</ul>
+<p>可以将 <code>service.spec.externalTrafficPolicy</code> 的值为 Local，请求就只会被代理到本地 endpoints 而不会被转发到其它节点。这样就保留了最初的源 IP 地址 <strong>不会对访问NodePort的client ip做 SNAT了</strong>。如果没有本地 endpoints，发送到这个节点的数据包将会被丢弃。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2018/10/25/container-network/" title="容器网络">https://chumper.cn/2018/10/25/container-network/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/容器网络/" rel="tag"># 容器网络</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/07/servicetopo/" rel="next" title="服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】">
+                <i class="fa fa-chevron-left"></i> 服务亲和性路由在华为云 k8s 中的实践【Kubernetes中的服务拓扑】
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/28/k8s-svc/" rel="prev" title="kubernetes&容器网络（1）之seivice">
+                kubernetes&容器网络（1）之seivice <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#容器网络"><span class="nav-number">1.</span> <span class="nav-text">容器网络</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#vxlan"><span class="nav-number">1.1.</span> <span class="nav-text">vxlan</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flannel"><span class="nav-number">1.2.</span> <span class="nav-text">Flannel</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#POD-IP的分配"><span class="nav-number">1.2.1.</span> <span class="nav-text">POD IP的分配</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用CNI后，即配置了-kubelet-的-network-plugin-cni，容器的IP分配："><span class="nav-number">1.2.1.1.</span> <span class="nav-text">使用CNI后，即配置了 kubelet 的 --network-plugin=cni，容器的IP分配：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CNM模式"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">CNM模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flannel的两种方式-CNI-CNM总结"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">flannel的两种方式 CNI CNM总结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cluster-IP的分配"><span class="nav-number">1.3.</span> <span class="nav-text">cluster IP的分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#network-policy"><span class="nav-number">1.4.</span> <span class="nav-text">network policy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过NodePort来访问service的话，client的源ip会被做SNAT"><span class="nav-number">1.5.</span> <span class="nav-text">通过NodePort来访问service的话，client的源ip会被做SNAT</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

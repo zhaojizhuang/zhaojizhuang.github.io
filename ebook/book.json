@@ -1,0 +1,46 @@
+{
+    "title": "zhaojizhuang's Glory",
+    "author": "zhaojizhuang",
+    "description": "select * from learn",
+    "language": "zh-hans",
+    "styles": {
+        "website": "./styles/website.css"
+    },
+    "structure": {
+        "readme": "README.md"
+    },
+    "links": {
+        "sidebar": {
+            "我的博客": "https://chumper.cn"
+        }
+    },
+    "plugins": [
+        "-sharing",
+        "splitter",
+        "expandable-chapters-small",
+        "github",
+        "github-buttons",
+        "sharing-plus",
+        "chapter-fold",
+        "page-toc-button"
+    ],
+    "pluginsConfig": {
+        "github": {
+            "url": "https://github.com/zhaojizhuang"
+        },
+        "github-buttons": {
+            "buttons": [{
+                "user": "zhaojizhuang",
+                "repo": "zhaojizhuang.github.io",
+                "type": "star",
+                "size": "small",
+                "count": true
+                }
+            ]
+        },
+        "page-toc-button": {
+            "maxTocDepth": 2,
+            "minTocSize": 2
+        }
+    }
+}
