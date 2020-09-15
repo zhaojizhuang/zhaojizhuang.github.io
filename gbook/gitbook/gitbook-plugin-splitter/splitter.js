@@ -4,11 +4,32 @@ require(['gitbook', 'jQuery'], function (gitbook, $) {
 	// Gitbook is calculated as "calc (100% - 60px)" in the horizontal width when the width of the screen size is 600px
 	// or less.
 	// In this case, since contradiction occurs in the implementation of this module, return.
-	if($(window).width() <= 600)="" {="" return;="" }="" gitbook.events.bind('start',="" function="" ()="" });="" gitbook.events.bind('page.change',="" var="" key_split_state="plugin_gitbook_split" ;="" dividerwidth="null;" isdraggable="false;" dividercenteroffsetleft="null;" splitstate="null;" grabpointwidth="null;" $body="$('body');" $book="$('.book');" $summary="$('.book-summary');" $bookbody="$('.book-body');" $divider="$('<div" class="divider-content-summary">' +
+	if($(window).width() <= 600) {
+		return;
+	}
+
+	gitbook.events.bind('start', function () {
+	});
+
+	gitbook.events.bind('page.change', function () {
+
+		var KEY_SPLIT_STATE = 'plugin_gitbook_split';
+
+		var dividerWidth = null;
+		var isDraggable = false;
+		var dividerCenterOffsetLeft = null;
+		var splitState = null;
+		var grabPointWidth = null;
+
+		var $body = $('body');
+		var $book = $('.book');
+		var $summary = $('.book-summary');
+		var $bookBody = $('.book-body');
+		var $divider = $('<div class="divider-content-summary">' +
 			               '<div class="divider-content-summary__icon">' +
 			                 '<i class="fa fa-ellipsis-v"></i>' +
 			               '</div>' +
-			             '');
+			             '</div>');
 
 		$summary.append($divider);
 
@@ -105,4 +126,3 @@ require(['gitbook', 'jQuery'], function (gitbook, $) {
 		}
 	});
 });
-</=>

@@ -80,17 +80,17 @@ gitbook.events.on('page.change', function() {
 	}
 
     // Generate html for button and menu
-    var html = "<div class="page-toc-button"><i class="fa fa-bars" aria-hidden="true"></i><div class="page-toc-menu"><ul>";
+    var html = "<div class='page-toc-button'><i class='fa fa-bars' aria-hidden='true'></i><div class='page-toc-menu'><ul>";
     for (i = 0; i < tocArray.length; i++) {
-        html += "<li><a href="#"+ tocArray[i].url + "">" + tocArray[i].name + "</a></li>";
+        html += "<li><a href='#"+ tocArray[i].url + "'>" + tocArray[i].name + "</a></li>";
         if (tocArray[i].children.length > 0) {
             html += "<ul>"
             for (j = 0; j < tocArray[i].children.length; j++) {
-                html += "<li><a href="#" + tocArray[i].children[j].url + "">"+tocArray[i].children[j].name + "</a></li>";
+                html += "<li><a href='#" + tocArray[i].children[j].url + "'>"+tocArray[i].children[j].name + "</a></li>";
                 if (tocArray[i].children[j].children.length > 0) {
                     html += "<ul>"
                     for (k = 0; k < tocArray[i].children[j].children.length; k++) {
-                        html += "<li><a href="#" + tocArray[i].children[j].children[k].url + "">"+tocArray[i].children[j].children[k].name + "</a></li>";
+                        html += "<li><a href='#" + tocArray[i].children[j].children[k].url + "'>"+tocArray[i].children[j].children[k].name + "</a></li>";
                     }
                     html += "</ul>"
                 }
