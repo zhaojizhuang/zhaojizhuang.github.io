@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2020-08-11T11:50:46.622Z</updated>
+  <updated>2020-11-04T15:50:44.545Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -17,11 +17,11 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>[译][转]Cilium：BPF 和 XDP 参考指南</title>
-    <link href="https://chumper.cn/2020/07/30/cilium-bpm/"/>
-    <id>https://chumper.cn/2020/07/30/cilium-bpm/</id>
+    <title>【Knative系列】理解 Knative 扩缩容系统的设计</title>
+    <link href="https://chumper.cn/2020/07/30/knative-autoscalling/"/>
+    <id>https://chumper.cn/2020/07/30/knative-autoscalling/</id>
     <published>2020-07-30T10:16:18.000Z</published>
-    <updated>2020-08-11T11:50:46.622Z</updated>
+    <updated>2020-11-04T15:50:44.545Z</updated>
     
     <summary type="html">
     
@@ -30,7 +30,11 @@
         
         
           &lt;blockquote&gt;
-&lt;p&gt;译者序&lt;br&gt;本文翻译自 Cilium 1.6 的官方文档：BPF and XDP Reference
+&lt;p&gt;本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Knative Serving 扩缩容系统的组件；&lt;/li&gt;
+&lt;li&gt;涉及的API；&lt;/li&gt;
+&lt;li&gt;扩缩容和冷启动时的
         
       
     
@@ -40,9 +44,9 @@
       <category term="cilium" scheme="https://chumper.cn/categories/cilium/"/>
     
     
-      <category term=" ebpf" scheme="https://chumper.cn/tags/ebpf/"/>
+      <category term="knative" scheme="https://chumper.cn/tags/knative/"/>
     
-      <category term="xdp" scheme="https://chumper.cn/tags/xdp/"/>
+      <category term="autoscalling" scheme="https://chumper.cn/tags/autoscalling/"/>
     
   </entry>
   
