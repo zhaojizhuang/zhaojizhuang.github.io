@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2020-11-04T15:50:44.545Z</updated>
+  <updated>2020-11-04T15:59:03.896Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -18,10 +18,10 @@
   
   <entry>
     <title>【Knative系列】理解 Knative 扩缩容系统的设计</title>
-    <link href="https://chumper.cn/2020/07/30/knative-autoscalling/"/>
-    <id>https://chumper.cn/2020/07/30/knative-autoscalling/</id>
-    <published>2020-07-30T10:16:18.000Z</published>
-    <updated>2020-11-04T15:50:44.545Z</updated>
+    <link href="https://chumper.cn/2020/09/30/knative-autoscalling/"/>
+    <id>https://chumper.cn/2020/09/30/knative-autoscalling/</id>
+    <published>2020-09-30T10:16:18.000Z</published>
+    <updated>2020-11-04T15:59:03.896Z</updated>
     
     <summary type="html">
     
@@ -41,7 +41,7 @@
     </summary>
     
     
-      <category term="cilium" scheme="https://chumper.cn/categories/cilium/"/>
+      <category term="knative" scheme="https://chumper.cn/categories/knative/"/>
     
     
       <category term="knative" scheme="https://chumper.cn/tags/knative/"/>

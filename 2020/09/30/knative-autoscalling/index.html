@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT">
+  <meta name="keywords" content="knative,autoscalling,">
 
 
 
@@ -81,18 +81,22 @@
 
 
 
-<meta name="description" content="赵吉壮，专注于 k8s Go 云原生曾就职于华为 Cloud BU，从事云原生基础设施相关的设计与开发工作.现就职于字节跳动Data团队，从事边缘计算相关的工作.欢迎各位一起来交流进步. 联系博客：@壮哥的学习记录微博：@chumpercsdn：@Kernel_MomoGitHub：@zhaojizhuang  大牛博客酷壳|左耳朵耗子Go语言充电站|大彬码农桃花源draveness煎鱼">
-<meta name="keywords" content="k8s zhaojizhuang">
-<meta property="og:type" content="website">
-<meta property="og:title" content="壮哥的个人博客">
-<meta property="og:url" content="https://chumper.cn/about/index.html">
+<meta name="description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
+<meta name="keywords" content="knative,autoscalling">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【Knative系列】理解 Knative 扩缩容系统的设计">
+<meta property="og:url" content="https://chumper.cn/2020/09/30/knative-autoscalling/index.html">
 <meta property="og:site_name" content="赵吉壮">
-<meta property="og:description" content="赵吉壮，专注于 k8s Go 云原生曾就职于华为 Cloud BU，从事云原生基础设施相关的设计与开发工作.现就职于字节跳动Data团队，从事边缘计算相关的工作.欢迎各位一起来交流进步. 联系博客：@壮哥的学习记录微博：@chumpercsdn：@Kernel_MomoGitHub：@zhaojizhuang  大牛博客酷壳|左耳朵耗子Go语言充电站|大彬码农桃花源draveness煎鱼">
+<meta property="og:description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-08-11T08:37:54.033Z">
+<meta property="og:image" content="https://chumper.cn/images/scale-up-down.png">
+<meta property="og:image" content="https://chumper.cn/images/scale-to-0.png">
+<meta property="og:image" content="https://chumper.cn/images/scale-from-0.png">
+<meta property="og:updated_time" content="2020-11-04T15:59:03.896Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="壮哥的个人博客">
-<meta name="twitter:description" content="赵吉壮，专注于 k8s Go 云原生曾就职于华为 Cloud BU，从事云原生基础设施相关的设计与开发工作.现就职于字节跳动Data团队，从事边缘计算相关的工作.欢迎各位一起来交流进步. 联系博客：@壮哥的学习记录微博：@chumpercsdn：@Kernel_MomoGitHub：@zhaojizhuang  大牛博客酷壳|左耳朵耗子Go语言充电站|大彬码农桃花源draveness煎鱼">
+<meta name="twitter:title" content="【Knative系列】理解 Knative 扩缩容系统的设计">
+<meta name="twitter:description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
+<meta name="twitter:image" content="https://chumper.cn/images/scale-up-down.png">
 
 
 
@@ -123,14 +127,14 @@
 
 
 
-  <link rel="canonical" href="https://chumper.cn/about/">
+  <link rel="canonical" href="https://chumper.cn/2020/09/30/knative-autoscalling/">
 
 
 
 
 
 
-  <title>壮哥的个人博客 | 赵吉壮</title>
+  <title>【Knative系列】理解 Knative 扩缩容系统的设计 | 赵吉壮</title>
   
 
 
@@ -297,37 +301,237 @@
 
   <div id="posts" class="posts-expand">
     
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2020/09/30/knative-autoscalling/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
     
-    
-    <div class="post-block page">
       <header class="post-header">
 
-	<h1 class="post-title" itemprop="name headline">壮哥的个人博客</h1>
-
-
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
         
         
-          <p>赵吉壮，专注于 k8s Go 云原生<br>曾就职于华为 Cloud BU，从事云原生基础设施相关的设计与开发工作.<br>现就职于字节跳动Data团队，从事边缘计算相关的工作.<br>欢迎各位一起来交流进步.</p>
-<h3 id="联系"><a href="#联系" class="headerlink" title="联系"></a>联系</h3><p>博客：<a href="http://zhaojizhuang.github.io/" target="_blank" rel="noopener">@壮哥的学习记录</a><br>微博：<a href="https://weibo.com/zhaojizhuang" target="_blank" rel="noopener">@chumper</a><br>csdn：<a href="https://blog.csdn.net/power886" target="_blank" rel="noopener">@Kernel_Momo</a><br>GitHub：<a href="https://github.com/zhaojizhuang" target="_blank" rel="noopener">@zhaojizhuang</a></p>
-<hr>
-<h3 id="大牛博客"><a href="#大牛博客" class="headerlink" title="大牛博客"></a>大牛博客</h3><p><a href="https://coolshell.cn/" target="_blank" rel="noopener">酷壳|左耳朵耗子</a><br><a href="https://lessisbetter.site/" target="_blank" rel="noopener">Go语言充电站|大彬</a><br><a href="https://qcrao.com/" target="_blank" rel="noopener">码农桃花源</a><br><a href="https://draveness.me/" target="_blank" rel="noopener">draveness</a><br><a href="https://eddycjy.com/" target="_blank" rel="noopener">煎鱼</a></p>
-
+          <h1 class="post-title" itemprop="name headline">【Knative系列】理解 Knative 扩缩容系统的设计</h1>
         
-      </div>
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-09-30T18:16:18+08:00">
+                2020-09-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/knative/" itemprop="url" rel="index">
+                    <span itemprop="name">knative</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
       
       
+
+      
+        <blockquote>
+<p>本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：</p>
+<ul>
+<li>Knative Serving 扩缩容系统的组件；</li>
+<li>涉及的API；</li>
+<li>扩缩容和冷启动时的 控制流和数据流的一些细节；</li>
+</ul>
+</blockquote>
+<h2 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h2><p>Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：<br>了解其中的控制流和数据流的走向，了解其在扩缩容过程中的作用。因篇幅有限，这里只对组件进行简要描述，后续会针对每个组件进行详细的单独讲解。</p>
+<h3 id="1-queue-proxy"><a href="#1-queue-proxy" class="headerlink" title="1. queue-proxy"></a>1. queue-proxy</h3><p><code>queue-proxy</code> 是 一个伴随着用户容器运行的 Sidecar 容器，跟用户容器运行在同一个 Pod 中。每个请求到达业务容器之前都会经过 <code>queue-proxy</code> 容器，<br>这也是它问什么叫 <code>proxy</code> 的原因。</p>
+<p><code>queue-proxy</code> 的主要作用是统计和限制到达业务容器的请求并发量，当对一个 Revision 设置了并发量之后（比如设置了5），<br><code>queue-proxy</code> 会确保不会同时有超过5个请求打到业务容器。当有超过5个请求到来时，<code>queue-proxy</code>会先把请求暂存在自己的队列 <code>queue</code> 里，（这也是为什么名字里有个 queue的缘故）。<br><code>queue-proxy</code> 同时会统计进来的请求量，同时会通过指定端口提供平均并发量和 rps（每秒请求量）的查询。</p>
+<h3 id="2-Autoscaler"><a href="#2-Autoscaler" class="headerlink" title="2. Autoscaler"></a>2. Autoscaler</h3><p><code>Autoscaler</code> 是 Knative Serving 系统中一个重要的 pod，它由三部分组成：</p>
+<ul>
+<li>PodAutoscaler reconciler</li>
+<li>Collector</li>
+<li>Decider</li>
+</ul>
+<p><code>PodAutoscaler reconciler</code> 会监测 <code>PodAutoscaler</code>（KPA）的变更，然后交由 <code>Collector</code> 和 <code>Decider</code> 处理</p>
+<p><code>Collector</code> 主要负责从应用的 <code>queue-proxy</code> 那里收集指标， <code>Collector</code> 会收集每个实例的指标，然后汇总得到整个系统的指标。为了实现扩缩容，会搜集所有应用实例的样本，并将收集到的样本反映到整个集群。</p>
+<p><code>Decider</code> 得到指标之后，来决定多少个Pod 被扩容出来。简单的计算公式如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">want = concurrencyInSystem/targetConcurrencyPerInstance</span><br></pre></td></tr></table></figure>
+<p>另外，扩缩容的量也会受到 <code>Revision</code> 中最大最小实例数的限制。同时 <code>Autoscaler</code> 还会计算当前系统中剩余多少突发请求容量（可扩缩容多少实例）进来决定  请求是否走 <code>Activator</code> 转发。</p>
+<h3 id="3-Activator"><a href="#3-Activator" class="headerlink" title="3. Activator"></a>3. Activator</h3><p><code>Activator</code> 是整个系统中所用应用共享的一个组件，是可以扩缩容的，主要目的是缓存请求并给 <code>Autoscaler</code>主动上报请求指标</p>
+<p><code>Activator</code> 主要作用在从零启动和缩容到零的过程，能根据请求量来对请求进行负载均衡。当 <code>revision</code> 缩容到零之后，请求先经过 <code>Activator</code> 而不是直接到 <code>revision</code>。 当请求到达时，<code>Activator</code><br>会缓存这这些请求，同时携带请求指标（请求并发数）去触发 <code>Autoscaler</code>扩容实例，当实例 ready后，<code>Activator</code> 才会将请求从缓存中取出来转发出去。同时为了避免后端的实例过载，<br><code>Activator</code> 还会充当一个负载均衡器的作用，根据请求量决定转发到哪个实例（通过将请求分发到后端所有的Pod上，而不是他们超过设置的负载并发量）。 Knative Serving 会根据不同的情况来决定是否让请求经过 <code>Activator</code>，<br>当一个应用系统中有足够多的pod实例时，<code>Activator</code> 将不再担任代理转发角色，请求会直接打到 <code>revision</code> 来降低网络性能开销。</p>
+<p>跟 <code>queue-proxy</code> 不同，<code>Activator</code> 是通过 websocket 主动上报指标给 <code>Autoscaler</code>，这种设计当然是为了应用实例尽可能快的冷启动。<code>queue-proxy</code> 是被动的拉取：<code>Autoscaler</code>去 <code>queue-proxy</code>指定端口拉取指标。</p>
+<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><h3 id="PodAutoscaler-PA-KPA"><a href="#PodAutoscaler-PA-KPA" class="headerlink" title="PodAutoscaler (PA,KPA)"></a>PodAutoscaler (PA,KPA)</h3><p><strong>API:</strong> <code>podautoscalers.autoscaling.internal.knative.dev</code></p>
+<p><code>PodAutoscaler</code> 是对扩缩容的一个抽象，简写是 KPA 或 PA ，每个 <code>revision</code><br> 会对应生成一个 <code>PodAutoscaler</code>。<br> 可通过下面的指令查看</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl get kpa -n xxx</span><br></pre></td></tr></table></figure>
+<h3 id="ServerlessServices-SKS"><a href="#ServerlessServices-SKS" class="headerlink" title="ServerlessServices (SKS)"></a>ServerlessServices (SKS)</h3><p><strong>API:</strong> <code>serverlessservices.networking.internal.knative.dev</code></p>
+<p> <code>ServerlessServices</code> 是 <code>KPA</code> 产生的，一个 <code>KPA</code> 生成一个 <code>SKS</code>，<code>SKS</code> 是对 k8s service 之上的一个抽象，<br> 主要是用来控制数据流是直接流向服务 <code>revision</code>（实例数不为零） 还是经过 <code>Activator</code>（实例数为0）。</p>
+<p> 对于每个 <code>revision</code>，会对应生成两个k8s service ，一个<code>public service</code>，一个 <code>private service</code>.</p>
+<p> <code>private service</code> 是标准的 k8s service，通过label selector 来筛选对应的deploy 产生的pod，即 svc 对应的 endpoints 由 k8s 自动管控。</p>
+<p> <code>public service</code> 是不受 k8s 管控的，它没有 label selector，不会像 <code>private service</code> 一样 自动生成 endpoints。<code>public service</code> 对应的 endpoints<br> 由 Knative <code>SKS reconciler</code> 来控制。 </p>
+<p> <code>SKS</code> 有两种模式：<code>proxy</code> 和 <code>serve</code></p>
+<ul>
+<li><code>serve</code> 模式下 <code>public service</code> 后端 endpoints 跟 <code>private service</code>一样， 所有流量都会直接指向  <code>revision</code> 对应的 pod。</li>
+<li><p><code>proxy</code> 模式下 <code>public service</code> 后端 endpoints 指向的是 系统中  <code>Activator</code> 对应的 pod，所有流量都会流经 <code>Activator</code>。 </p>
+<h2 id="数据流"><a href="#数据流" class="headerlink" title="数据流"></a>数据流</h2><p>下面看几种情况下的数据流向，加深对Knative 扩缩容系统机制的理解。</p>
+<h3 id="1-稳定状态下的扩缩容"><a href="#1-稳定状态下的扩缩容" class="headerlink" title="1. 稳定状态下的扩缩容"></a>1. 稳定状态下的扩缩容</h3><p><img src="/images/scale-up-down.png" alt="scale-up-down.png"></p>
+<p>稳定状态下， <code>Autoscaler</code> 会定期通过 <code>queue-proxy</code> 获取 <code>revision</code> 活跃实例的指标，并不断调整 revision 实例。<br>请求打到系统时，  <code>Autoscaler</code> 会根据当前最新的请求指标确定扩缩容比例。</p>
+<p><code>SKS</code> 会监控  <code>private service</code> 的状态，保持 <code>public service</code> 的 endpoints 与 <code>private service</code> 一致 。</p>
+<h3 id="2-缩容到零"><a href="#2-缩容到零" class="headerlink" title="2. 缩容到零"></a>2. 缩容到零</h3><p><img src="/images/scale-to-0.png" alt="scale-to-0.png"></p>
+<p>一旦系统中某个 <code>revision</code> 不再接收到请求，那么这个 <code>revision</code> 对应的实例数就会缩容到零，此时 <code>Activator</code> 和 <code>queue-proxy</code> 收到的请求数都为 0。</p>
+<p>在系统删掉 <code>revision</code> 最后一个 Pod 之前，会先将 <code>Activator</code> 加到 数据流路径中（请求先到 <code>Activator</code>）。</p>
+<p><code>Autoscaler</code> 触发 <code>SKS</code> 变为 <code>proxy</code> 模式，所有的流量都直接导到 <code>Activator</code>， 此时 <code>SKS</code> 的 <code>public service</code> 后端的endpoints 变为 <code>Activator</code> 的IP，<br>此时，如果在冷却窗口时间内没有流量进来，那么最后一个 Pod 才会真正缩容到零。</p>
+<h3 id="3-冷启动（从零开始扩容）"><a href="#3-冷启动（从零开始扩容）" class="headerlink" title="3. 冷启动（从零开始扩容）"></a>3. 冷启动（从零开始扩容）</h3><p><img src="/images/scale-from-0.png" alt="from0"></p>
+<p>当 <code>revision</code> 缩容到零之后，此时如果有请求进来，则系统需要扩容。因为 <code>SKS</code> 在 <code>proxy</code> 模式，流量会直接请求到 <code>Activator</code> 。<code>Activator</code> 会统计请求量并将 指标主动上报到 <code>Autoscaler</code>，<br>同时 <code>Activator</code> 会缓存请求，并 watch <code>SKS</code> 的 <code>private service</code>， 直到 <code>private service</code> 对应的endpoints产生。</p>
+<p><code>Autoscaler</code> 收到 <code>Activator</code> 发送的指标后，会立即启动扩容的逻辑。这个过程的得出的结论是至少一个Pod要被创造出来，<code>AutoScaler</code> 会修改 <code>revision</code> 对应 <code>Deployment</code> 的副本数为为N（N&gt;0）,<code>AutoScaler</code><br>同时会将 <code>SKS</code> 的状态置为 <code>serve</code> 模式，流量会直接到导到 <code>revision</code> 对应的 pod上。</p>
+<p><code>Activator</code> 最终会监测到 <code>private service</code> 对应的endpoints的产生，并对 endpoints 进行健康检查。健康检查通过后，<code>Activator</code> 会将之前缓存的请求转发到<br>健康的实例上。</p>
+<p>最终 <code>revison</code> 完成了冷启动（从零扩容）。</p>
+</li>
+</ul>
+
       
     </div>
     
     
     
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2020/09/30/knative-autoscalling/" title="【Knative系列】理解 Knative 扩缩容系统的设计">https://chumper.cn/2020/09/30/knative-autoscalling/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/knative/" rel="tag"># knative</a>
+          
+            <a href="/tags/autoscalling/" rel="tag"># autoscalling</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/05/19/confighpa/" rel="next" title="自行配置你的HPA扩缩容速率">
+                <i class="fa fa-chevron-left"></i> 自行配置你的HPA扩缩容速率
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
   </div>
 
 
@@ -465,7 +669,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#联系"><span class="nav-number">1.</span> <span class="nav-text">联系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#大牛博客"><span class="nav-number">2.</span> <span class="nav-text">大牛博客</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#组件"><span class="nav-number">1.</span> <span class="nav-text">组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-queue-proxy"><span class="nav-number">1.1.</span> <span class="nav-text">1. queue-proxy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Autoscaler"><span class="nav-number">1.2.</span> <span class="nav-text">2. Autoscaler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Activator"><span class="nav-number">1.3.</span> <span class="nav-text">3. Activator</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">2.</span> <span class="nav-text">API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PodAutoscaler-PA-KPA"><span class="nav-number">2.1.</span> <span class="nav-text">PodAutoscaler (PA,KPA)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServerlessServices-SKS"><span class="nav-number">2.2.</span> <span class="nav-text">ServerlessServices (SKS)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据流"><span class="nav-number">3.</span> <span class="nav-text">数据流</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-稳定状态下的扩缩容"><span class="nav-number">3.1.</span> <span class="nav-text">1. 稳定状态下的扩缩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-缩容到零"><span class="nav-number">3.2.</span> <span class="nav-text">2. 缩容到零</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-冷启动（从零开始扩容）"><span class="nav-number">3.3.</span> <span class="nav-text">3. 冷启动（从零开始扩容）</span></a></li></ol></li></ol></div>
             
 
           </div>
