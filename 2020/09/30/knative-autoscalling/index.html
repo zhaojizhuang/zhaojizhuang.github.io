@@ -92,7 +92,7 @@
 <meta property="og:image" content="https://chumper.cn/images/scale-up-down.png">
 <meta property="og:image" content="https://chumper.cn/images/scale-to-0.png">
 <meta property="og:image" content="https://chumper.cn/images/scale-from-0.png">
-<meta property="og:updated_time" content="2020-11-04T15:59:03.896Z">
+<meta property="og:updated_time" content="2020-11-05T03:33:45.364Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Knative系列】理解 Knative 扩缩容系统的设计">
 <meta name="twitter:description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
@@ -412,7 +412,7 @@
 </blockquote>
 <h2 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h2><p>Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：<br>了解其中的控制流和数据流的走向，了解其在扩缩容过程中的作用。因篇幅有限，这里只对组件进行简要描述，后续会针对每个组件进行详细的单独讲解。</p>
 <h3 id="1-queue-proxy"><a href="#1-queue-proxy" class="headerlink" title="1. queue-proxy"></a>1. queue-proxy</h3><p><code>queue-proxy</code> 是 一个伴随着用户容器运行的 Sidecar 容器，跟用户容器运行在同一个 Pod 中。每个请求到达业务容器之前都会经过 <code>queue-proxy</code> 容器，<br>这也是它问什么叫 <code>proxy</code> 的原因。</p>
-<p><code>queue-proxy</code> 的主要作用是统计和限制到达业务容器的请求并发量，当对一个 Revision 设置了并发量之后（比如设置了5），<br><code>queue-proxy</code> 会确保不会同时有超过5个请求打到业务容器。当有超过5个请求到来时，<code>queue-proxy</code>会先把请求暂存在自己的队列 <code>queue</code> 里，（这也是为什么名字里有个 queue的缘故）。<br><code>queue-proxy</code> 同时会统计进来的请求量，同时会通过指定端口提供平均并发量和 rps（每秒请求量）的查询。</p>
+<p><code>queue-proxy</code> 的主要作用是统计和限制到达业务容器的请求并发量，当对一个 Revision 设置了并发量之后（比如设置了5），<code>queue-proxy</code> 会确保不会同时有超过5个请求打到业务容器。当有超过5个请求到来时，<code>queue-proxy</code>会先把请求暂存在自己的队列 <code>queue</code> 里，（这也是为什么名字里有个 queue的缘故）。<code>queue-proxy</code> 同时会统计进来的请求量，同时会通过指定端口提供平均并发量和 rps（每秒请求量）的查询。</p>
 <h3 id="2-Autoscaler"><a href="#2-Autoscaler" class="headerlink" title="2. Autoscaler"></a>2. Autoscaler</h3><p><code>Autoscaler</code> 是 Knative Serving 系统中一个重要的 pod，它由三部分组成：</p>
 <ul>
 <li>PodAutoscaler reconciler</li>
@@ -425,7 +425,7 @@
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">want = concurrencyInSystem/targetConcurrencyPerInstance</span><br></pre></td></tr></table></figure>
 <p>另外，扩缩容的量也会受到 <code>Revision</code> 中最大最小实例数的限制。同时 <code>Autoscaler</code> 还会计算当前系统中剩余多少突发请求容量（可扩缩容多少实例）进来决定  请求是否走 <code>Activator</code> 转发。</p>
 <h3 id="3-Activator"><a href="#3-Activator" class="headerlink" title="3. Activator"></a>3. Activator</h3><p><code>Activator</code> 是整个系统中所用应用共享的一个组件，是可以扩缩容的，主要目的是缓存请求并给 <code>Autoscaler</code>主动上报请求指标</p>
-<p><code>Activator</code> 主要作用在从零启动和缩容到零的过程，能根据请求量来对请求进行负载均衡。当 <code>revision</code> 缩容到零之后，请求先经过 <code>Activator</code> 而不是直接到 <code>revision</code>。 当请求到达时，<code>Activator</code><br>会缓存这这些请求，同时携带请求指标（请求并发数）去触发 <code>Autoscaler</code>扩容实例，当实例 ready后，<code>Activator</code> 才会将请求从缓存中取出来转发出去。同时为了避免后端的实例过载，<br><code>Activator</code> 还会充当一个负载均衡器的作用，根据请求量决定转发到哪个实例（通过将请求分发到后端所有的Pod上，而不是他们超过设置的负载并发量）。 Knative Serving 会根据不同的情况来决定是否让请求经过 <code>Activator</code>，<br>当一个应用系统中有足够多的pod实例时，<code>Activator</code> 将不再担任代理转发角色，请求会直接打到 <code>revision</code> 来降低网络性能开销。</p>
+<p><code>Activator</code> 主要作用在从零启动和缩容到零的过程，能根据请求量来对请求进行负载均衡。当 <code>revision</code> 缩容到零之后，请求先经过 <code>Activator</code> 而不是直接到 <code>revision</code>。 当请求到达时，<code>Activator</code> 会缓存这这些请求，同时携带请求指标（请求并发数）去触发 <code>Autoscaler</code>扩容实例，当实例 ready后，<code>Activator</code> 才会将请求从缓存中取出来转发出去。同时为了避免后端的实例过载，<code>Activator</code> 还会充当一个负载均衡器的作用，根据请求量决定转发到哪个实例（通过将请求分发到后端所有的Pod上，而不是他们超过设置的负载并发量）。 Knative Serving 会根据不同的情况来决定是否让请求经过 <code>Activator</code>，当一个应用系统中有足够多的pod实例时，<code>Activator</code> 将不再担任代理转发角色，请求会直接打到 <code>revision</code> 来降低网络性能开销。</p>
 <p>跟 <code>queue-proxy</code> 不同，<code>Activator</code> 是通过 websocket 主动上报指标给 <code>Autoscaler</code>，这种设计当然是为了应用实例尽可能快的冷启动。<code>queue-proxy</code> 是被动的拉取：<code>Autoscaler</code>去 <code>queue-proxy</code>指定端口拉取指标。</p>
 <h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><h3 id="PodAutoscaler-PA-KPA"><a href="#PodAutoscaler-PA-KPA" class="headerlink" title="PodAutoscaler (PA,KPA)"></a>PodAutoscaler (PA,KPA)</h3><p><strong>API:</strong> <code>podautoscalers.autoscaling.internal.knative.dev</code></p>
 <p><code>PodAutoscaler</code> 是对扩缩容的一个抽象，简写是 KPA 或 PA ，每个 <code>revision</code><br> 会对应生成一个 <code>PodAutoscaler</code>。<br> 可通过下面的指令查看</p>
@@ -441,15 +441,47 @@
 <li><p><code>proxy</code> 模式下 <code>public service</code> 后端 endpoints 指向的是 系统中  <code>Activator</code> 对应的 pod，所有流量都会流经 <code>Activator</code>。 </p>
 <h2 id="数据流"><a href="#数据流" class="headerlink" title="数据流"></a>数据流</h2><p>下面看几种情况下的数据流向，加深对Knative 扩缩容系统机制的理解。</p>
 <h3 id="1-稳定状态下的扩缩容"><a href="#1-稳定状态下的扩缩容" class="headerlink" title="1. 稳定状态下的扩缩容"></a>1. 稳定状态下的扩缩容</h3><p><img src="/images/scale-up-down.png" alt="scale-up-down.png"></p>
-<p>稳定状态下， <code>Autoscaler</code> 会定期通过 <code>queue-proxy</code> 获取 <code>revision</code> 活跃实例的指标，并不断调整 revision 实例。<br>请求打到系统时，  <code>Autoscaler</code> 会根据当前最新的请求指标确定扩缩容比例。</p>
-<p><code>SKS</code> 会监控  <code>private service</code> 的状态，保持 <code>public service</code> 的 endpoints 与 <code>private service</code> 一致 。</p>
+<p><strong>稳定状态下的工作流程如下：</strong></p>
+</li>
+<li><ol>
+<li>请求通过 <code>ingress</code> 路由到 <code>public service</code> ，此时 <code>public service</code> 对应的 endpoints 是 revision 对应的 pod </li>
+</ol>
+</li>
+<li><ol start="2">
+<li><code>Autoscaler</code> 会定期通过 <code>queue-proxy</code> 获取 <code>revision</code> 活跃实例的指标，并不断调整 revision 实例。<br>请求打到系统时，  <code>Autoscaler</code> 会根据当前最新的请求指标确定扩缩容比例。</li>
+</ol>
+</li>
+<li><ol start="3">
+<li><code>SKS</code> 模式是 <code>serve</code>, 它会监控  <code>private service</code> 的状态，保持 <code>public service</code> 的 endpoints 与 <code>private service</code> 一致 。</li>
+</ol>
 <h3 id="2-缩容到零"><a href="#2-缩容到零" class="headerlink" title="2. 缩容到零"></a>2. 缩容到零</h3><p><img src="/images/scale-to-0.png" alt="scale-to-0.png"></p>
-<p>一旦系统中某个 <code>revision</code> 不再接收到请求，那么这个 <code>revision</code> 对应的实例数就会缩容到零，此时 <code>Activator</code> 和 <code>queue-proxy</code> 收到的请求数都为 0。</p>
-<p>在系统删掉 <code>revision</code> 最后一个 Pod 之前，会先将 <code>Activator</code> 加到 数据流路径中（请求先到 <code>Activator</code>）。</p>
-<p><code>Autoscaler</code> 触发 <code>SKS</code> 变为 <code>proxy</code> 模式，所有的流量都直接导到 <code>Activator</code>， 此时 <code>SKS</code> 的 <code>public service</code> 后端的endpoints 变为 <code>Activator</code> 的IP，<br>此时，如果在冷却窗口时间内没有流量进来，那么最后一个 Pod 才会真正缩容到零。</p>
+<p><strong>缩容到零过程的工作流程如下：</strong></p>
+</li>
+</ul>
+<ul>
+<li><ol>
+<li><code>AutoScaler</code> 通过  <code>queue-proxy</code> 获取 <code>revision</code> 实例的请求指标</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>一旦系统中某个 <code>revision</code> 不再接收到请求（此时 <code>Activator</code> 和 <code>queue-proxy</code> 收到的请求数都为 0）</li>
+</ol>
+</li>
+<li><ol start="3">
+<li><code>AutoScaler</code> 会通过 <code>Decider</code> 确定出当前所需的实例数为 0，通过 <code>PodAutoscaler</code> 修改 revision 对应 Deployment 的 实例数</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>在系统删掉 <code>revision</code> 最后一个 Pod 之前，会先将 <code>Activator</code> 加到 数据流路径中（请求先到 <code>Activator</code>）。<code>Autoscaler</code> 触发 <code>SKS</code> 变为 <code>proxy</code> 模式，此时 <code>SKS</code> 的 <code>public service</code> 后端的endpoints 变为 <code>Activator</code> 的IP，所有的流量都直接导到 <code>Activator</code> </li>
+</ol>
+</li>
+<li><ol start="4">
+<li>此时，如果在冷却窗口时间内依然没有流量进来，那么最后一个 Pod 才会真正缩容到零。</li>
+</ol>
 <h3 id="3-冷启动（从零开始扩容）"><a href="#3-冷启动（从零开始扩容）" class="headerlink" title="3. 冷启动（从零开始扩容）"></a>3. 冷启动（从零开始扩容）</h3><p><img src="/images/scale-from-0.png" alt="from0"></p>
-<p>当 <code>revision</code> 缩容到零之后，此时如果有请求进来，则系统需要扩容。因为 <code>SKS</code> 在 <code>proxy</code> 模式，流量会直接请求到 <code>Activator</code> 。<code>Activator</code> 会统计请求量并将 指标主动上报到 <code>Autoscaler</code>，<br>同时 <code>Activator</code> 会缓存请求，并 watch <code>SKS</code> 的 <code>private service</code>， 直到 <code>private service</code> 对应的endpoints产生。</p>
-<p><code>Autoscaler</code> 收到 <code>Activator</code> 发送的指标后，会立即启动扩容的逻辑。这个过程的得出的结论是至少一个Pod要被创造出来，<code>AutoScaler</code> 会修改 <code>revision</code> 对应 <code>Deployment</code> 的副本数为为N（N&gt;0）,<code>AutoScaler</code><br>同时会将 <code>SKS</code> 的状态置为 <code>serve</code> 模式，流量会直接到导到 <code>revision</code> 对应的 pod上。</p>
+<p><strong>冷启动过程的工作流程如下：</strong></p>
+<p>当 <code>revision</code> 缩容到零之后，此时如果有请求进来，则系统需要扩容。因为 <code>SKS</code> 在 <code>proxy</code> 模式，流量会直接请求到 <code>Activator</code> 。<code>Activator</code> 会统计请求量并将 指标主动上报到 <code>Autoscaler</code>， 同时 <code>Activator</code> 会缓存请求，并 watch <code>SKS</code> 的 <code>private service</code>， 直到 <code>private service</code> 对应的endpoints产生。</p>
+<p><code>Autoscaler</code> 收到 <code>Activator</code> 发送的指标后，会立即启动扩容的逻辑。这个过程的得出的结论是至少一个Pod要被创造出来，<code>AutoScaler</code> 会修改 <code>revision</code> 对应 <code>Deployment</code> 的副本数为为N（N&gt;0）,<code>AutoScaler</code> 同时会将 <code>SKS</code> 的状态置为 <code>serve</code> 模式，流量会直接到导到 <code>revision</code> 对应的 pod上。</p>
 <p><code>Activator</code> 最终会监测到 <code>private service</code> 对应的endpoints的产生，并对 endpoints 进行健康检查。健康检查通过后，<code>Activator</code> 会将之前缓存的请求转发到<br>健康的实例上。</p>
 <p>最终 <code>revison</code> 完成了冷启动（从零扩容）。</p>
 </li>
