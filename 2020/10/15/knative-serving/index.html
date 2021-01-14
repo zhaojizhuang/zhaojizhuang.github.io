@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="knative,serving,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="本文主要讲解 Knative serving 系统及组件：  发展历程Knative 是谷歌开源的 serverless 架构方案，旨在提供一套简单易用的 serverless 方案，把 serverless 标准化。目前参与的公司主要是 Google、Pivotal、IBM、Red Hat，2018年7月24日才刚刚对外发布，当前还处于快速发展的阶段(3.4k star, 3.3k issue">
+<meta name="keywords" content="knative,serving">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~">
+<meta property="og:url" content="https://chumper.cn/2020/10/15/knative-serving/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="本文主要讲解 Knative serving 系统及组件：  发展历程Knative 是谷歌开源的 serverless 架构方案，旨在提供一套简单易用的 serverless 方案，把 serverless 标准化。目前参与的公司主要是 Google、Pivotal、IBM、Red Hat，2018年7月24日才刚刚对外发布，当前还处于快速发展的阶段(3.4k star, 3.3k issue">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://chumper.cn/images/k_history.png">
+<meta property="og:image" content="https://chumper.cn/images/changwei.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc1.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc2.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc3.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc4.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc5.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc6.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc7.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc8.png">
+<meta property="og:image" content="https://chumper.cn/images/ksvc9.png">
+<meta property="og:image" content="https://chumper.cn/images/knativegate.png">
+<meta property="og:image" content="https://chumper.cn/images/queue-proxy.png">
+<meta property="og:image" content="https://chumper.cn/images/autoscaller.png">
+<meta property="og:image" content="https://chumper.cn/images/activator.png">
+<meta property="og:image" content="https://chumper.cn/images/activator2.png">
+<meta property="og:image" content="https://chumper.cn/images/scale1.png">
+<meta property="og:image" content="https://chumper.cn/images/scale2.png">
+<meta property="og:image" content="https://chumper.cn/images/scale3.png">
+<meta property="og:updated_time" content="2021-01-14T15:28:54.960Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~">
+<meta name="twitter:description" content="本文主要讲解 Knative serving 系统及组件：  发展历程Knative 是谷歌开源的 serverless 架构方案，旨在提供一套简单易用的 serverless 方案，把 serverless 标准化。目前参与的公司主要是 Google、Pivotal、IBM、Red Hat，2018年7月24日才刚刚对外发布，当前还处于快速发展的阶段(3.4k star, 3.3k issue">
+<meta name="twitter:image" content="https://chumper.cn/images/k_history.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2020/10/15/knative-serving/">
+
+
+
+
+
+
+  <title>【Knative系列】看完这篇还不懂 Knative Serving，你来打我~ | 赵吉壮</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/gbook/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2020/10/15/knative-serving/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">【Knative系列】看完这篇还不懂 Knative Serving，你来打我~</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-15T14:10:18+08:00">
+                2020-10-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/knative/" itemprop="url" rel="index">
+                    <span itemprop="name">knative</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文主要讲解 Knative serving 系统及组件：</p>
+</blockquote>
+<h2 id="发展历程"><a href="#发展历程" class="headerlink" title="发展历程"></a>发展历程</h2><p>Knative 是谷歌开源的 serverless 架构方案，旨在提供一套简单易用的 serverless 方案，把 serverless 标准化。目前参与的公司主要是 <strong>Google、Pivotal、IBM、Red Hat</strong>，2018年7月24日才刚刚对外发布，当前还处于快速发展的阶段(3.4k star, 3.3k issue)。</p>
+<p>Knative 包含 build（已被tekton取代），serving，event三个部分，本文主要介绍serving。</p>
+<p>先看下Knative的发展里历程</p>
+<p> <img src="/images/k_history.png" alt="Generated"></p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>时间</th>
+<th>发起公司</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k8s</td>
+<td>2014年6月</td>
+<td>Google （同年加入 微软、RedHat、IBM、Docker）</td>
+</tr>
+<tr>
+<td>istio</td>
+<td><strong>2017</strong> 年6 月8 日</td>
+<td>Google，IBM 和 Lyft</td>
+</tr>
+<tr>
+<td>knative</td>
+<td><strong>2018</strong>年7月24日</td>
+<td>Google （目前主要为 Google、Pivotal、IBM、Red Hat）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="前言-有了-”k8s，为什么还要-knative”"><a href="#前言-有了-”k8s，为什么还要-knative”" class="headerlink" title="前言 有了 ”k8s，为什么还要 knative”"></a>前言 有了 ”k8s，为什么还要 knative”</h2><p>通常情况下 <strong>Serverless = Faas + Baas</strong>，Faas 无状态（业务逻辑），Baas 有状态（通用服务：数据库，认证，消息队列）。</p>
+<p>既然有了 k8s (paas), 为什么还需要 Knative (Serverless),下面从四个方面来进行解释：<strong>资源利用率，弹性伸缩，按比例灰度发布，用户运维复杂性</strong></p>
+<h3 id="1-资源利用率"><a href="#1-资源利用率" class="headerlink" title="1.  资源利用率"></a>1.  资源利用率</h3><p>讲资源利用率之前先看下下面两个应用，左边<strong>应用 A</strong> 这个是典型的中长尾应用，<strong>中长尾应用就是那些每天大部分时间都没有流量或者有很少流量的应用。</strong></p>
+<p> <img src="/images/changwei.png" alt="Generated"></p>
+<p>想一下，如果用 <code>paas(k8s)</code> 来实现的话，对于应用 A，需按照资源占用的资源最高点来申请规格，也就是 <strong>4U10G</strong>, 而且 paas 最低实例数<strong>&gt;=1</strong>, 长此以往, 当中长尾应用足够多时，资源利用率可想而知。有可能会出现 大部分边缘集群资源被预占，但是利用率却很低。</p>
+<p>而 Knative，恰恰可以解决应用A的资源占用问题，因为 Knative 可以将实例缩容为0，并根据请求自动扩缩容，缩容到零可以大大增加集群的资源利用率，因为中长尾应用都是按需所取，不会过度空占用资源。</p>
+<p>比较合理的是对应应用A 用 <code>Knative(Serverless)</code>，对于应用 B 用 <code>k8s（Paas）</code></p>
+<h3 id="2-弹性伸缩"><a href="#2-弹性伸缩" class="headerlink" title="2. 弹性伸缩"></a>2. 弹性伸缩</h3><p>大家可能会想到，k8s 也有 hpa 进行扩缩容，但是 Knative 的 kpa 和 k8s 的 hpa 有很大的不同：</p>
+<p>• <strong>Knative</strong> <strong>支持缩容到 0 和从 0 启动，反应更迅速适合流量突发场景；</strong></p>
+<p>• <strong>K8s HPA</strong> <strong>不支持缩容到 0 ，反应比较保守</strong></p>
+<p>具体比较如下</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Knative KPA</th>
+<th>k8s HPA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>指标类型</td>
+<td>可以根据 请求量扩速容</td>
+<td>只能根据 cpu memory 等指标扩缩容（或自定义指标）</td>
+</tr>
+<tr>
+<td>01启动</td>
+<td><strong>可以缩容到0和冷启动</strong></td>
+<td>只能缩容到1（如果缩容到0，就没有实例了，流量进不来，metrics数据永远为0，此时HPA也无能为力）</td>
+</tr>
+<tr>
+<td>指标获取方式</td>
+<td>Knative 指标获取有两种方式，Activator 和queue-proxy, activator的metrics 是通过<strong>websocket</strong> <strong>主动push</strong> 给Autoscaler的，反应更迅速</td>
+<td>k8s 只能是通过prometheus 轮询获取。</td>
+</tr>
+<tr>
+<td>反应速度</td>
+<td>Knative 默认会 计算 60 秒窗口内的平均并发数， 也会计算 6 秒的恐慌窗口，6s内达到目标并发的 2 倍，则会进入恐慌模式。在恐慌模式下，Autoscaler 在更短、更敏感的紧急窗口上工作</td>
+<td>而且 HPA 本身设计比较保守，有一个稳定期（默认5min）默认<strong>在5min</strong>内没有重新扩缩容的情况下，才会触发扩缩容。当大流量突发过来时，如果正处在5min内的HPA稳定期，这个时候根据HPA的策略，会导致无法扩容。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-按比例灰度发布"><a href="#3-按比例灰度发布" class="headerlink" title="3. 按比例灰度发布"></a>3. 按比例灰度发布</h3><p>设想一下，假如通过 k8s来进行灰度发布怎么做，只能是通过两个Deployment和两个service，如果灰度升级的话只能通过修改两个 Deployment 的rs，一个逐渐增加，一个逐渐减少，如果想要按照百分比灰度，只能在外部负载均衡做文章，所以要想 Kubernetes 原生实现，至少需要<strong>一个按流量分发的网关，两个 service，两个 deployment ，两个 ingress ， hpa，prometheus</strong> 等，实现起来相当复杂。</p>
+<p>使用 Knative 就可以很简单的实现，只需一个 ksvc 即可</p>
+<h3 id="4-用户运维复杂性"><a href="#4-用户运维复杂性" class="headerlink" title="4. 用户运维复杂性"></a>4. 用户运维复杂性</h3><p><strong>使用</strong> <strong>Knative</strong> <strong>免运维，低成本：</strong>用户只关心业务逻辑，由工具和云去管理资源，复杂性由平台去做：容器镜像构建，Pod 的管控，服务的发布，相关的运维等。</p>
+<p>k8s 本质上还是基础设施的抽象，对应pod的管控，服务的发布，镜像的构建等等需要上层的包装。</p>
+<h2 id="1-相关概念介绍"><a href="#1-相关概念介绍" class="headerlink" title="1. 相关概念介绍"></a>1. 相关概念介绍</h2><p><strong>资源介绍</strong>： knative 资源</p>
+<p>推荐一个工具 <a href="https://github.com/ahmetb/kubectl-tree" target="_blank" rel="noopener">kubectl tree </a>可以查看k8s资源之间的引用关系 </p>
+<p> <strong>1. <em>Service(ksvc)</em></strong></p>
+<p>ksvc 是 Knative 中 最顶层的 CR 资源，用于定义 Knative 应用 ，包含镜像以及 traffic 百分比等等（本例配了 两个版本，流量百分比是 10%，90%）, 可以接管 route 和 configuration 的配置</p>
+<p><img src="/images/ksvc1.png" alt="ksvc"></p>
+<p><strong>2. <em>Configuration</em></strong></p>
+<p>configuration 是 Knative 应用的最新配置，也就是应用目前期望的状态。configuration 更改会产生快照 revision</p>
+<p> <img src="/images/ksvc2.png" alt="ksvc"></p>
+<p><strong>3. <em>Revision</em></strong></p>
+<p>revision 是 Knative 应用的快照，Knative 的设计理念中 revision 是不可更改的，可以看做是 git 的 历史 commit 记录</p>
+<p><img src="/images/ksvc3.png" alt="ksvc"></p>
+<p><strong>4. <em>Route</em></strong></p>
+<p>route 是 Knative 蓝绿发布，金丝雀发布的关键，用于声明不同版本之间流量的百分比。</p>
+<p><img src="/images/ksvc4.png" alt="ksvc"></p>
+<p><strong>5. <em>Ingress(kingress)</em></strong></p>
+<p>Knative 的流量入口网关 是通过 kingress 抽象的。详情可以看第二节 <strong>Knative 网关</strong></p>
+<p><img src="/images/ksvc5.png" alt="ksvc"></p>
+<p><strong>6. PodAutoScaler(kpa) </strong></p>
+<p><img src="/images/ksvc6.png" alt="ksvc"></p>
+<p><strong>7. <em>ServerlessService(sks)</em></strong></p>
+<p><img src="/images/ksvc7.png" alt="ksvc"></p>
+<p><strong>8. <em>k8s Service  (public)</em></strong></p>
+<p><img src="/images/ksvc8.png" alt="ksvc"></p>
+<p><strong>9. <em>k8s Service  (private)</em></strong></p>
+<p><img src="/images/ksvc9.png" alt="ksvc"></p>
+<h2 id="2-Knative-网关"><a href="#2-Knative-网关" class="headerlink" title="2. Knative 网关"></a>2. Knative 网关</h2><p>Knative 从设计之初就考虑到了其扩展性，通过抽象出来 Knative Ingress （kingress）资源来对接不同的网络扩展：<strong>Ambassador</strong>、<strong>Contour</strong>、<strong>Gloo</strong>、<strong>Istio</strong>、<strong>Kong</strong>、<strong>Kourier</strong></p>
+<p>这些网络插件都是基于 <strong>Envoy</strong> 这个新生的云原生服务代理，关键特性是可以<strong>基于流量百分比进行分流</strong>。</p>
+<p>感兴趣的可以研究下 <a href="https://www.servicemesher.com/envoy/intro/what_is_envoy.html" target="_blank" rel="noopener">https://www.servicemesher.com/envoy/intro/what_is_envoy.html</a></p>
+<p> <img src="/images/knativegate.png" alt="Generated"></p>
+<h2 id="3-Knative-组件"><a href="#3-Knative-组件" class="headerlink" title="3. Knative 组件"></a>3. Knative 组件</h2><h3 id="1-Queue-proxy"><a href="#1-Queue-proxy" class="headerlink" title="1. Queue-proxy"></a>1. Queue-proxy</h3><p> <img src="/images/queue-proxy.png" alt="Generated"></p>
+<p>Queue-proxy 是每个业务 pod 中都存在的 sidecar，每个发到业务pod的请求都会先经过 queue-proxy</p>
+<p>queue-proxy 的主要作用是 <strong>收集和限制</strong> 业务应用的并发量，比如当一个 revision 设定了并发量为 5 ，那么 queue-proxy 会保证每次到达业务容器的请求数不会大于 5. 如果多于 5 个请求到达，queue-proxy 会将请求暂存在本地队列中。</p>
+<p>几个端口表示如下：</p>
+<p>• 8012， queue-proxy 代理的http端口，流量的入口都会到 8012<br>• 8013， http2 端口，用于grpc流量的转发<br>• 8022,  queue-proxy 管理端口，如健康检查<br>• 9090， queue-proxy的监控端口，暴露指标供 autoscaler 采集，用于kpa扩缩容<br>• 9091， prometheus 应用监控指标（请求数，响应时长等）<br>• USER_PORT， 是用户配置的容器端口，即业务实际暴露的服务端口，ksvc container port 配置的</p>
+<h3 id="2-Autoscaller"><a href="#2-Autoscaller" class="headerlink" title="2. Autoscaller"></a>2. Autoscaller</h3><p> <img src="/images/autoscaller.png" alt="Generated"></p>
+<p>AutoScaller 主要是 Knative 的扩缩容实现，通过request指标来决定是否扩缩容实例，指标来源有两个：</p>
+<p>• 通过获取每个 pod queue-proxy 中的指标<br>• Activator 通过 websocket 主动上报</p>
+<p><strong>扩缩容算法如下：</strong></p>
+<p>autoscaler 是基于每个 Pod（并发）的运行中请求的平均数量。系统的默认目标并发性为 100，但是我们为服务使用了 10。我们为服务加载了 50 个并发请求，因此自动缩放器创建了 5 个容器（ 50 个并发请求/目标 10 = 5 个容器）。</p>
+<p>算法中有两种模式，分别是 panic 和 stable 模式，一个是短时间，一个是长时间，为了解决短时间内请求突增的场景，需要快速扩容。</p>
+<p><strong>Stable Mode</strong>（稳定模式）</p>
+<p>在稳定模式下，Autoscaler 根据每个pod期望的并发来调整Deployment的副本个数。根据每个pod在60秒窗口内的平均并发来计算，而不是根据现有副本个数计算，因为pod的数量增加和pod变为可服务和提供指标数据有一定时间间隔。</p>
+<p><strong>Panic Mode</strong> <strong>（恐慌模式）</strong></p>
+<p>KPA会在 <strong>60</strong> 秒的窗口内计算平均并发性，因此系统需要一分钟时间才能稳定在所需的并发性级别。但是，自动缩放器还会计算一个 <strong>6秒</strong> 的紧急窗口，如果该窗口达到目标并发性的 2 倍，它将进入紧急模式。在紧急模式下，自动缩放器在较短，更敏感的紧急窗口上运行。一旦在 60 s秒内不再满足紧急情况，autoscaler 将返回到最初的 60 秒稳定窗口。</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">                                                        |</span><br><span class="line">                                  Panic Target---&gt;  +--| 20</span><br><span class="line">                                                    |  |</span><br><span class="line">                                                    | &lt;------Panic Window</span><br><span class="line">                                                    |  |</span><br><span class="line">       Stable Target---&gt;  +-------------------------|--| 10   CONCURRENCY</span><br><span class="line">                          |                         |  |</span><br><span class="line">                          |                      &lt;-----------Stable Window</span><br><span class="line">                          |                         |  |</span><br><span class="line">--------------------------+-------------------------+--+ 0</span><br><span class="line">120                       60                           0</span><br><span class="line">                     TIME</span><br></pre></td></tr></table></figure>
+<h3 id="3-Activator"><a href="#3-Activator" class="headerlink" title="3. Activator"></a>3. Activator</h3><p> <img src="/images/activator.png" alt="Generated"></p>
+<p>Activator 的作用：<strong>流量的负载和缓存，是Knative能缩容到 0 的关键</strong></p>
+<p>实例为0 时（冷启动），流量会先转发到 Activator，由 Activator 通过 websocket 主动触发 Autoscaler 扩缩容。</p>
+<p>Activator 本身的扩缩容通过 hpa 实现</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">root@admin03.gyct:~# kubectl get hpa -n knative-serving</span><br><span class="line">NAME        REFERENCE              TARGETS   MINPODS   MAXPODS   REPLICAS   AGE</span><br><span class="line">activator   Deployment/activator   8%/100%   1         20        1          73d</span><br></pre></td></tr></table></figure>
+<p>可以看到 Activator 默认最大可以扩缩容到 20</p>
+<p>Activator 只在 冷启动阶段是 proxy 模式，当当实例足够时，autoscaler 会更新 public service 的endpoints 指向 revision对应的pod，将请求导向真正的后端，这时候处理请求过程中 activator 不在起作用 </p>
+<p><strong>详细步骤如下：</strong></p>
+<p> <img src="/images/activator2.png" alt="Generated"></p>
+<p>冷启动时 activator 的角色</p>
+<ol>
+<li>Kingress 收到请求（确切的是 网关收到请求后根据kingress生成的配置做转发，如istio是virtualservice）后，将请求导至 activator</li>
+<li>activator 将请求保存在缓存中</li>
+<li>Activator 触发 autoscaller， 触发过程中其中做了两件事：<br>a. Activator 携带了第2步缓存的请求信息到 autoscaler；<br>b. 触发信号促使 autoscaller 立即做出扩容决定，而不是等下个扩容周期；</li>
+<li>考虑到有请求需要处理，但是目前实例是0，autoscaller 决定扩容出一个实例，于是设置一个新的 scale 目标</li>
+<li>activator 在等待 autoscaler 和 Serving 准备工作的时候，activator 会去轮询 Serving 查看实例时候准备完毕</li>
+<li>Serving 调用k8s 生成k8s 实例（deploy，pod）</li>
+<li>当实例可用时，Activator 将请求从缓存中 proxy 到实例</li>
+<li>Activator 中的 proxy 模块 将请求代理到实例</li>
+<li>Activator 中的 proxy 模块 同样将 response 返回到 kingress</li>
+</ol>
+<h2 id="4-扩缩容原理"><a href="#4-扩缩容原理" class="headerlink" title="4. 扩缩容原理"></a>4. 扩缩容原理</h2><h3 id="1-正常扩缩容场景（非-0-实例）"><a href="#1-正常扩缩容场景（非-0-实例）" class="headerlink" title="1. 正常扩缩容场景（非 0 实例）"></a>1. <strong>正常扩缩容场景（非 0 实例）</strong></h3><p> <img src="/images/scale1.png" alt="Generated"></p>
+<p><strong>稳定状态下的工作流程如下：</strong></p>
+<ol>
+<li>请求通过 ingress 路由到 public service ，此时 public service 对应的 endpoints 是 revision 对应的 pod</li>
+<li>Autoscaler 会定期通过 queue-proxy 获取 revision 活跃实例的指标，并不断调整 revision 实例。</li>
+<li>请求打到系统时， Autoscaler 会根据当前最新的请求指标确定扩缩容比例。</li>
+<li>SKS 模式是 serve, 它会监控 private service 的状态，保持 public service 的 endpoints 与 private service 一致 。</li>
+</ol>
+<h3 id="2-缩容到-0-的场景"><a href="#2-缩容到-0-的场景" class="headerlink" title="2. 缩容到 0 的场景"></a>2. 缩容到 0 的场景</h3><p> <img src="/images/scale2.png" alt="Generated"></p>
+<p><strong>缩容到零过程的工作流程如下：</strong></p>
+<ol>
+<li>AutoScaler 通过 queue-proxy 获取 revision 实例的请求指标</li>
+<li>一旦系统中某个 revision 不再接收到请求（此时 Activator 和 queue-proxy 收到的请求数都为 0）</li>
+<li>AutoScaler 会通过 Decider 确定出当前所需的实例数为 0，通过 PodAutoscaler 修改 revision 对应 Deployment 的 实例数</li>
+<li>在系统删掉 revision 最后一个 Pod 之前，会先将 Activator 加到 数据流路径中（请求先到 Activator）。Autoscaler 触发 SKS 变为 proxy 模式，此时 SKS 的 public service 后端的endpoints 变为 Activator 的IP，所有的流量都直接导到 Activator</li>
+<li>此时，如果在冷却窗口时间内依然没有流量进来，那么最后一个 Pod 才会真正缩容到零。</li>
+</ol>
+<h3 id="3-从-0-启动的场景"><a href="#3-从-0-启动的场景" class="headerlink" title="3. 从 0 启动的场景"></a>3. <strong>从 0 启动的场景</strong></h3><p> <img src="/images/scale3.png" alt="Generated"></p>
+<p><strong>冷启动过程的工作流程如下：</strong></p>
+<p>当 revision 缩容到零之后，此时如果有请求进来，则系统需要扩容。因为 SKS 在 proxy 模式，流量会直接请求到 Activator 。Activator 会统计请求量并将 指标主动上报到 Autoscaler， 同时 Activator 会缓存请求，并 watch SKS 的 private service， 直到 private service 对应的endpoints产生。</p>
+<p>Autoscaler 收到 Activator 发送的指标后，会立即启动扩容的逻辑。这个过程的得出的结论是至少一个Pod要被创造出来，AutoScaler 会修改 revision 对应 Deployment 的副本数为为N（N&gt;0）,AutoScaler 同时会将 SKS 的状态置为 serve 模式，流量会直接到导到 revision 对应的 pod上。</p>
+<p>Activator 最终会监测到 private service 对应的endpoints的产生，并对 endpoints 进行健康检查。健康检查通过后，Activator 会将之前缓存的请求转发到健康的实例上。</p>
+<p>最终 revison 完成了冷启动（从零扩容）。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2020/10/15/knative-serving/" title="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~">https://chumper.cn/2020/10/15/knative-serving/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/knative/" rel="tag"># knative</a>
+          
+            <a href="/tags/serving/" rel="tag"># serving</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/09/30/knative-autoscalling/" rel="next" title="【Knative系列】理解 Knative 扩缩容系统的设计原理">
+                <i class="fa fa-chevron-left"></i> 【Knative系列】理解 Knative 扩缩容系统的设计原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#发展历程"><span class="nav-number">1.</span> <span class="nav-text">发展历程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#前言-有了-”k8s，为什么还要-knative”"><span class="nav-number">2.</span> <span class="nav-text">前言 有了 ”k8s，为什么还要 knative”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-资源利用率"><span class="nav-number">2.1.</span> <span class="nav-text">1.  资源利用率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-弹性伸缩"><span class="nav-number">2.2.</span> <span class="nav-text">2. 弹性伸缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-按比例灰度发布"><span class="nav-number">2.3.</span> <span class="nav-text">3. 按比例灰度发布</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-用户运维复杂性"><span class="nav-number">2.4.</span> <span class="nav-text">4. 用户运维复杂性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-相关概念介绍"><span class="nav-number">3.</span> <span class="nav-text">1. 相关概念介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Knative-网关"><span class="nav-number">4.</span> <span class="nav-text">2. Knative 网关</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Knative-组件"><span class="nav-number">5.</span> <span class="nav-text">3. Knative 组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Queue-proxy"><span class="nav-number">5.1.</span> <span class="nav-text">1. Queue-proxy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Autoscaller"><span class="nav-number">5.2.</span> <span class="nav-text">2. Autoscaller</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Activator"><span class="nav-number">5.3.</span> <span class="nav-text">3. Activator</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-扩缩容原理"><span class="nav-number">6.</span> <span class="nav-text">4. 扩缩容原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-正常扩缩容场景（非-0-实例）"><span class="nav-number">6.1.</span> <span class="nav-text">1. 正常扩缩容场景（非 0 实例）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-缩容到-0-的场景"><span class="nav-number">6.2.</span> <span class="nav-text">2. 缩容到 0 的场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-从-0-启动的场景"><span class="nav-number">6.3.</span> <span class="nav-text">3. 从 0 启动的场景</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

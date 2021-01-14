@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2020-11-05T03:36:47.813Z</updated>
+  <updated>2021-01-14T15:28:54.960Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -17,11 +17,43 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>【Knative系列】理解 Knative 扩缩容系统的设计</title>
+    <title>【Knative系列】看完这篇还不懂 Knative Serving，你来打我~</title>
+    <link href="https://chumper.cn/2020/10/15/knative-serving/"/>
+    <id>https://chumper.cn/2020/10/15/knative-serving/</id>
+    <published>2020-10-15T06:10:18.000Z</published>
+    <updated>2021-01-14T15:28:54.960Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;blockquote&gt;
+&lt;p&gt;本文主要讲解 Knative serving 系统及组件：&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&quot;发展历程&quot;&gt;&lt;a href=&quot;#发展历程&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+      <category term="knative" scheme="https://chumper.cn/categories/knative/"/>
+    
+    
+      <category term="knative" scheme="https://chumper.cn/tags/knative/"/>
+    
+      <category term="serving" scheme="https://chumper.cn/tags/serving/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>【Knative系列】理解 Knative 扩缩容系统的设计原理</title>
     <link href="https://chumper.cn/2020/09/30/knative-autoscalling/"/>
     <id>https://chumper.cn/2020/09/30/knative-autoscalling/</id>
     <published>2020-09-30T10:16:18.000Z</published>
-    <updated>2020-11-05T03:36:47.813Z</updated>
+    <updated>2020-11-05T03:37:36.469Z</updated>
     
     <summary type="html">
     

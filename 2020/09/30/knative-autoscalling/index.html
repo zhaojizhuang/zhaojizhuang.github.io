@@ -84,7 +84,7 @@
 <meta name="description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
 <meta name="keywords" content="knative,autoscalling">
 <meta property="og:type" content="article">
-<meta property="og:title" content="【Knative系列】理解 Knative 扩缩容系统的设计">
+<meta property="og:title" content="【Knative系列】理解 Knative 扩缩容系统的设计原理">
 <meta property="og:url" content="https://chumper.cn/2020/09/30/knative-autoscalling/index.html">
 <meta property="og:site_name" content="赵吉壮">
 <meta property="og:description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
@@ -92,9 +92,9 @@
 <meta property="og:image" content="https://chumper.cn/images/scale-up-down.png">
 <meta property="og:image" content="https://chumper.cn/images/scale-to-0.png">
 <meta property="og:image" content="https://chumper.cn/images/scale-from-0.png">
-<meta property="og:updated_time" content="2020-11-05T03:36:47.813Z">
+<meta property="og:updated_time" content="2020-11-05T03:37:36.469Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="【Knative系列】理解 Knative 扩缩容系统的设计">
+<meta name="twitter:title" content="【Knative系列】理解 Knative 扩缩容系统的设计原理">
 <meta name="twitter:description" content="本文主要讲解 Knative 扩缩容系统的设计原理及实现细节，主要从以下三个方面进行讲解：  Knative Serving 扩缩容系统的组件； 涉及的API； 扩缩容和冷启动时的 控制流和数据流的一些细节；   组件Knative Serving 是 Knative 系统的核心，而理解 Knative Serving 系统内的组件能更容易了理解 Knative Serving 系统的实现：了解">
 <meta name="twitter:image" content="https://chumper.cn/images/scale-up-down.png">
 
@@ -134,7 +134,7 @@
 
 
 
-  <title>【Knative系列】理解 Knative 扩缩容系统的设计 | 赵吉壮</title>
+  <title>【Knative系列】理解 Knative 扩缩容系统的设计原理 | 赵吉壮</title>
   
 
 
@@ -330,7 +330,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">【Knative系列】理解 Knative 扩缩容系统的设计</h1>
+          <h1 class="post-title" itemprop="name headline">【Knative系列】理解 Knative 扩缩容系统的设计原理</h1>
         
 
         <div class="post-meta">
@@ -486,7 +486,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://chumper.cn/2020/09/30/knative-autoscalling/" title="【Knative系列】理解 Knative 扩缩容系统的设计">https://chumper.cn/2020/09/30/knative-autoscalling/</a>
+    <a href="https://chumper.cn/2020/09/30/knative-autoscalling/" title="【Knative系列】理解 Knative 扩缩容系统的设计原理">https://chumper.cn/2020/09/30/knative-autoscalling/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -525,6 +525,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/15/knative-serving/" rel="prev" title="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~">
+                【Knative系列】看完这篇还不懂 Knative Serving，你来打我~ <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -618,7 +622,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -640,7 +644,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -701,7 +705,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
