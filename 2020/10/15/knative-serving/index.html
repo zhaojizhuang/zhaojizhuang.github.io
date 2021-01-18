@@ -91,23 +91,14 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://chumper.cn/images/k_history.png">
 <meta property="og:image" content="https://chumper.cn/images/changwei.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_1.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_2.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_3.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_4.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_5.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_6.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_7.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_8.png">
-<meta property="og:image" content="https://chumper.cn/images/knative_res.png">
 <meta property="og:image" content="https://chumper.cn/images/k_9.png">
 <meta property="og:image" content="https://chumper.cn/images/knativegate.png">
 <meta property="og:image" content="https://chumper.cn/images/queue-proxy.png">
@@ -117,7 +108,7 @@
 <meta property="og:image" content="https://chumper.cn/images/scale1.png">
 <meta property="og:image" content="https://chumper.cn/images/scale2.png">
 <meta property="og:image" content="https://chumper.cn/images/scale3.png">
-<meta property="og:updated_time" content="2021-01-18T03:12:37.104Z">
+<meta property="og:updated_time" content="2021-01-18T03:22:19.909Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~(史上最详细)">
 <meta name="twitter:description" content="本文主要讲解 Knative serving 系统及组件：  发展历程Knative 是谷歌开源的 serverless 架构方案，旨在提供一套简单易用的 serverless 方案，把 serverless 标准化。目前参与的公司主要是 Google、Pivotal、IBM、Red Hat，2018年7月24日才刚刚对外发布，当前还处于快速发展的阶段(3.4k star, 3.3k issue">
@@ -510,37 +501,28 @@
 <p>推荐一个工具 <a href="https://github.com/ahmetb/kubectl-tree" target="_blank" rel="noopener">kubectl tree </a>可以查看k8s资源之间的引用关系 </p>
 <p> <strong>1. <em>Service(ksvc)</em></strong></p>
 <p>ksvc 是 Knative 中 最顶层的 CR 资源，用于定义 Knative 应用 ，包含镜像以及 traffic 百分比等等（本例配了 两个版本，流量百分比是 10%，90%）, 可以接管 route 和 configuration 的配置</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_1.png" alt="ksvc"></p>
 <p><strong>2. <em>Configuration</em></strong></p>
 <p>configuration 是 Knative 应用的最新配置，也就是应用目前期望的状态。configuration 更改会产生快照 revision</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_2.png" alt="ksvc"></p>
 <p><strong>3. <em>Revision</em></strong></p>
 <p>revision 是 Knative 应用的快照，Knative 的设计理念中 revision 是不可更改的，可以看做是 git 的 历史 commit 记录</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_3.png" alt="ksvc"></p>
 <p><strong>4. <em>Route</em></strong></p>
 <p>route 是 Knative 蓝绿发布，金丝雀发布的关键，用于声明不同版本之间流量的百分比。</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_4.png" alt="ksvc"></p>
 <p><strong>5. <em>Ingress(kingress)</em></strong></p>
 <p>Knative 的流量入口网关 是通过 kingress 抽象的。详情可以看第二节 <strong>Knative 网关</strong></p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_5.png" alt="ksvc"></p>
 <p><strong>6. PodAutoScaler(kpa) </strong></p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_6.png" alt="ksvc"></p>
 <p><strong>7. <em>ServerlessService(sks)</em></strong></p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_7.png" alt="ksvc"></p>
 <p><strong>8. <em>k8s Service  (public)</em></strong></p>
 <p>注意，此处的 k8s service 没有 label selector，说明这个 service 的后端 endpoint 不是由 k8s 自动控制的，实际上这个 svc 的后端 endpoint 是 由 knative 自己来控制的，（是取 activator 的pod ip 还是 服务真实实例的pod ip）</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_8.png" alt="ksvc"></p>
 <p><strong>9. <em>k8s Service  (private)</em></strong></p>
 <p>private 类型 的 svc 不同于 public 类型的 svc，这个 svc 是通过label selector 来筛选后端 endpoint 的，这里后端指向的永远是 服务真实实例的 pod ip</p>
-<p> <img src="/images/knative_res.png" alt="ksvc"></p>
 <p> <img src="/images/k_9.png" alt="ksvc"></p>
 <h2 id="2-Knative-网关"><a href="#2-Knative-网关" class="headerlink" title="2. Knative 网关"></a>2. Knative 网关</h2><p>Knative 从设计之初就考虑到了其扩展性，通过抽象出来 Knative Ingress （kingress）资源来对接不同的网络扩展：<strong>Ambassador</strong>、<strong>Contour</strong>、<strong>Gloo</strong>、<strong>Istio</strong>、<strong>Kong</strong>、<strong>Kourier</strong></p>
 <p>这些网络插件都是基于 <strong>Envoy</strong> 这个新生的云原生服务代理，关键特性是可以<strong>基于流量百分比进行分流</strong>。</p>
