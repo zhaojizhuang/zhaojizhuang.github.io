@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[【Knative系列】Knative Source 开发指南]]></title>
     <url>%2F2021%2F01%2F25%2Fwrite-eventsource%2F</url>
-    <content type="text"></content>
+    <content type="text"><![CDATA[准备： 安装 go-licenses https://github.com/google/go-licenses 1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization 注意：运行 hack/update-codegen.sh 时在 linux上，mac 上会报错，见 issue https://github.com/knative/hack/issues/50 参考 官网 doc https://knative.dev/docs/eventing/samples/writing-event-source/]]></content>
       <categories>
         <category>k8s</category>
       </categories>

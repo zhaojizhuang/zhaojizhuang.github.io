@@ -81,18 +81,18 @@
 
 
 
-<meta name="description" content="专注 k8s go docker">
+<meta name="description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
 <meta name="keywords" content="knative,source,event">
 <meta property="og:type" content="article">
 <meta property="og:title" content="【Knative系列】Knative Source 开发指南">
 <meta property="og:url" content="https://chumper.cn/2021/01/25/write-eventsource/index.html">
 <meta property="og:site_name" content="赵吉壮">
-<meta property="og:description" content="专注 k8s go docker">
+<meta property="og:description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-02-24T14:28:09.356Z">
+<meta property="og:updated_time" content="2021-02-24T14:38:59.770Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Knative系列】Knative Source 开发指南">
-<meta name="twitter:description" content="专注 k8s go docker">
+<meta name="twitter:description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
 
 
 
@@ -398,7 +398,16 @@
       
 
       
-        
+        <h3 id="准备："><a href="#准备：" class="headerlink" title="准备："></a>准备：</h3><ul>
+<li>安装 <code>go-licenses</code> <a href="https://github.com/google/go-licenses" target="_blank" rel="noopener">https://github.com/google/go-licenses</a></li>
+</ul>
+<h3 id="1-相关概念的设计解耦"><a href="#1-相关概念的设计解耦" class="headerlink" title="1. 相关概念的设计解耦"></a>1. 相关概念的设计解耦</h3><h3 id="2-API-定义"><a href="#2-API-定义" class="headerlink" title="2. API 定义"></a>2. API 定义</h3><h3 id="3-Controller"><a href="#3-Controller" class="headerlink" title="3. Controller"></a>3. Controller</h3><h3 id="4-Reconciler"><a href="#4-Reconciler" class="headerlink" title="4. Reconciler"></a>4. Reconciler</h3><h3 id="5-Receive-Adapter"><a href="#5-Receive-Adapter" class="headerlink" title="5. Receive Adapter"></a>5. Receive Adapter</h3><h3 id="6-Example-YAML"><a href="#6-Example-YAML" class="headerlink" title="6. Example YAML"></a>6. Example YAML</h3><h3 id="7-Moving-the-event-source-to-the-knative-sandbox-organization"><a href="#7-Moving-the-event-source-to-the-knative-sandbox-organization" class="headerlink" title="7. Moving the event source to the knative-sandbox organization"></a>7. Moving the event source to the knative-sandbox organization</h3><blockquote>
+<p><em>注意：运行 hack/update-codegen.sh 时在 linux上，mac 上会报错，见 issue <a href="https://github.com/knative/hack/issues/50" target="_blank" rel="noopener">https://github.com/knative/hack/issues/50</a></em></p>
+</blockquote>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li>官网 doc <a href="https://knative.dev/docs/eventing/samples/writing-event-source/" target="_blank" rel="noopener">https://knative.dev/docs/eventing/samples/writing-event-source/</a></li>
+</ol>
+
       
     </div>
     
@@ -525,8 +534,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
@@ -596,6 +614,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#准备："><span class="nav-number">1.</span> <span class="nav-text">准备：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-相关概念的设计解耦"><span class="nav-number">2.</span> <span class="nav-text">1. 相关概念的设计解耦</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-API-定义"><span class="nav-number">3.</span> <span class="nav-text">2. API 定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Controller"><span class="nav-number">4.</span> <span class="nav-text">3. Controller</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Reconciler"><span class="nav-number">5.</span> <span class="nav-text">4. Reconciler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-Receive-Adapter"><span class="nav-number">6.</span> <span class="nav-text">5. Receive Adapter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-Example-YAML"><span class="nav-number">7.</span> <span class="nav-text">6. Example YAML</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-Moving-the-event-source-to-the-knative-sandbox-organization"><span class="nav-number">8.</span> <span class="nav-text">7. Moving the event source to the knative-sandbox organization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">9.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

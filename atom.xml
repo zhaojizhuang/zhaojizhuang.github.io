@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-02-24T14:28:09.356Z</updated>
+  <updated>2021-02-24T14:38:59.770Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -21,9 +21,18 @@
     <link href="https://chumper.cn/2021/01/25/write-eventsource/"/>
     <id>https://chumper.cn/2021/01/25/write-eventsource/</id>
     <published>2021-01-25T15:40:18.000Z</published>
-    <updated>2021-02-24T14:28:09.356Z</updated>
+    <updated>2021-02-24T14:38:59.770Z</updated>
     
     <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h3 id=&quot;准备：&quot;&gt;&lt;a href=&quot;#准备：&quot; class=&quot;headerlink&quot; title=&quot;准备：&quot;&gt;&lt;/a&gt;准备：&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;安装 &lt;code&gt;go-licenses&lt;/code&gt; &lt;a
+        
+      
     
     </summary>
     
