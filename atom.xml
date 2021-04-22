@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-04-22T02:23:27.237Z</updated>
+  <updated>2021-04-22T02:27:04.483Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -21,7 +21,7 @@
     <link href="https://chumper.cn/2021/04/21/write-controller/"/>
     <id>https://chumper.cn/2021/04/21/write-controller/</id>
     <published>2021-04-21T12:40:18.000Z</published>
-    <updated>2021-04-22T02:23:27.237Z</updated>
+    <updated>2021-04-22T02:27:04.483Z</updated>
     
     <summary type="html">
     
@@ -220,9 +220,9 @@
     
     
     
-      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
-    
       <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+    
+      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
   </entry>
   
@@ -276,11 +276,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
   </entry>
   
