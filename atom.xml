@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-02-26T02:21:55.191Z</updated>
+  <updated>2021-04-22T02:23:27.237Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -15,6 +15,35 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>【Knative系列】如何基于 Knative 开发自定义控制器</title>
+    <link href="https://chumper.cn/2021/04/21/write-controller/"/>
+    <id>https://chumper.cn/2021/04/21/write-controller/</id>
+    <published>2021-04-21T12:40:18.000Z</published>
+    <updated>2021-04-22T02:23:27.237Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h2 id=&quot;1-为什么要开发-自定义-controller？&quot;&gt;&lt;a href=&quot;#1-为什么要开发-自定义-controller？&quot; class=&quot;headerlink&quot; title=&quot;1. 为什么要开发 自定义 controller？&quot;&gt;&lt;/a&gt;1. 为什么要开发
+        
+      
+    
+    </summary>
+    
+    
+      <category term="k8s" scheme="https://chumper.cn/categories/k8s/"/>
+    
+    
+      <category term="knative" scheme="https://chumper.cn/tags/knative/"/>
+    
+      <category term="controller" scheme="https://chumper.cn/tags/controller/"/>
+    
+  </entry>
   
   <entry>
     <title>【Knative系列】Knative Source 开发指南</title>
