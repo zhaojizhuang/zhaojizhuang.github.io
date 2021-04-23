@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-04-22T02:27:04.483Z</updated>
+  <updated>2021-04-23T14:49:17.867Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -15,6 +15,36 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用</title>
+    <link href="https://chumper.cn/2021/04/23/ko-dev/"/>
+    <id>https://chumper.cn/2021/04/23/ko-dev/</id>
+    <published>2021-04-23T06:10:18.000Z</published>
+    <updated>2021-04-23T14:49:17.867Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;&lt;code&gt;Ko&lt;/code&gt; 是 &lt;code&gt;Google&lt;/code&gt; 开源的一款用于构建并部署 &lt;code&gt;Go&lt;/code&gt; 应用的工具。&lt;/p&gt;
+&lt;p&gt;这是一款简单、快速的 &lt;code&gt;Go&lt;/code&gt; 应用镜像构建器。并与
+        
+      
+    
+    </summary>
+    
+    
+      <category term="云原生" scheme="https://chumper.cn/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/"/>
+    
+    
+      <category term="k8s" scheme="https://chumper.cn/tags/k8s/"/>
+    
+      <category term="云原生" scheme="https://chumper.cn/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/"/>
+    
+  </entry>
   
   <entry>
     <title>【Knative系列】如何基于 Knative 开发自定义控制器</title>
@@ -276,11 +306,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+    
       <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
-    
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
   </entry>
   
