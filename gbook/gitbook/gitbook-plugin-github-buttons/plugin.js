@@ -15,7 +15,7 @@ require(['gitbook'], function (gitbook) {
         var count = _ref.count;
 
         var extraParam = type === "watch" ? "&v=2" : "";
-        return '<a class="btn pull-right hidden-mobile" aria-label="github">\n            <iframe\n                style="display:inline-block;vertical-align:middle;"\n                src="https://ghbtns.com/github-btn.html?user=' + user + '&repo=' + repo + '&type=' + type + '&count=' + count + '&size=' + size + extraParam + '"\n                frameborder="0"\n                scrolling="0"\n                width="' + width + 'px"\n                height="' + height + 'px"\n            ></iframe>\n        </a>';
+        return '<a class="btn pull-right hidden-mobile" aria-label="github">\n            <iframe\n style="display:inline-block;vertical-align:middle;" \n="" src="https://ghbtns.com/github-btn.html?user=' + user + '&repo=' + repo + '&type=' + type + '&count=' + count + '&size=' + size + extraParam + '" frameborder="0" scrolling="0" width="' + width + 'px" height="' + height + 'px">\n        </iframe\n></a>';
     }
 
     function createUserButton(_ref2) {
@@ -25,7 +25,7 @@ require(['gitbook'], function (gitbook) {
         var height = _ref2.height;
         var count = _ref2.count;
 
-        return '<a class="btn pull-right hidden-mobile" aria-label="github">\n            <iframe\n                style="display:inline-block;vertical-align:middle;"\n                src="https://ghbtns.com/github-btn.html?user=' + user + '&type=follow&count=' + count + '&size=' + size + '"\n                frameborder="0"\n                scrolling="0"\n                width="' + width + 'px"\n                height="' + height + 'px"\n            ></iframe>\n        </a>';
+        return '<a class="btn pull-right hidden-mobile" aria-label="github">\n            <iframe\n style="display:inline-block;vertical-align:middle;" \n="" src="https://ghbtns.com/github-btn.html?user=' + user + '&type=follow&count=' + count + '&size=' + size + '" frameborder="0" scrolling="0" width="' + width + 'px" height="' + height + 'px">\n        </iframe\n></a>';
     }
 
     function insertGitHubLink(button) {

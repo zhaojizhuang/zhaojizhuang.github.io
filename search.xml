@@ -112,9 +112,9 @@
         <category>Go</category>
       </categories>
       <tags>
-        <tag>Go</tag>
         <tag>linux</tag>
         <tag>epoll</tag>
+        <tag>Go</tag>
       </tags>
   </entry>
   <entry>
