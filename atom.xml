@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-08-28T14:37:19.013Z</updated>
+  <updated>2021-08-28T14:39:54.011Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -17,17 +17,30 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title></title>
-    <link href="https://chumper.cn/2021/08/28/cilium_arch/"/>
-    <id>https://chumper.cn/2021/08/28/cilium_arch/</id>
-    <published>2021-08-28T14:37:11.663Z</published>
-    <updated>2021-08-28T14:37:19.013Z</updated>
+    <title>【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程</title>
+    <link href="https://chumper.cn/2021/08/27/cilium02/"/>
+    <id>https://chumper.cn/2021/08/27/cilium02/</id>
+    <published>2021-08-27T11:16:18.000Z</published>
+    <updated>2021-08-28T14:39:54.011Z</updated>
     
     <summary type="html">
+    
+      
+      
+        
+        
+          &lt;blockquote&gt;
+&lt;p&gt;Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy
+        
+      
     
     </summary>
     
     
+      <category term="Cilium" scheme="https://chumper.cn/categories/Cilium/"/>
+    
+    
+      <category term="Cilium" scheme="https://chumper.cn/tags/Cilium/"/>
     
   </entry>
   
@@ -61,10 +74,10 @@
   
   <entry>
     <title>典型的 Serverless 架构是怎样的</title>
-    <link href="https://chumper.cn/2021/06/27/cilium02/"/>
-    <id>https://chumper.cn/2021/06/27/cilium02/</id>
+    <link href="https://chumper.cn/2021/06/27/cilium_arch/"/>
+    <id>https://chumper.cn/2021/06/27/cilium_arch/</id>
     <published>2021-06-27T11:16:18.000Z</published>
-    <updated>2021-08-28T14:37:56.946Z</updated>
+    <updated>2021-08-28T14:43:26.956Z</updated>
     
     <summary type="html">
     
@@ -72,8 +85,7 @@
       
         
         
-          &lt;blockquote&gt;
-&lt;p&gt;Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy
+          &lt;p&gt;先看下 CNCF 2020 (2021年的还没出) Serverless 调查报告显示的数据，云计算厂商中的 Serverless 产品使用率中 AWS Lambda 占 57% ；开源 Serverless 平台平台使用率中 Knative 占 27% 。
         
       
     
