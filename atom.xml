@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-04-23T14:49:17.867Z</updated>
+  <updated>2021-08-28T14:37:19.013Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -15,6 +15,77 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title></title>
+    <link href="https://chumper.cn/2021/08/28/cilium_arch/"/>
+    <id>https://chumper.cn/2021/08/28/cilium_arch/</id>
+    <published>2021-08-28T14:37:11.663Z</published>
+    <updated>2021-08-28T14:37:19.013Z</updated>
+    
+    <summary type="html">
+    
+    </summary>
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>【理解 Cilium 系列文章】(一) 初识 Cilium</title>
+    <link href="https://chumper.cn/2021/08/17/cilium01/"/>
+    <id>https://chumper.cn/2021/08/17/cilium01/</id>
+    <published>2021-08-17T12:16:18.000Z</published>
+    <updated>2021-08-28T14:21:36.378Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;Cilium&lt;/code&gt; 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 &lt;code&gt;kube-proxy&lt;/code&gt;
+        
+      
+    
+    </summary>
+    
+    
+      <category term="Cilium" scheme="https://chumper.cn/categories/Cilium/"/>
+    
+    
+      <category term="Cilium" scheme="https://chumper.cn/tags/Cilium/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>典型的 Serverless 架构是怎样的</title>
+    <link href="https://chumper.cn/2021/06/27/cilium02/"/>
+    <id>https://chumper.cn/2021/06/27/cilium02/</id>
+    <published>2021-06-27T11:16:18.000Z</published>
+    <updated>2021-08-28T14:37:56.946Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;blockquote&gt;
+&lt;p&gt;Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy
+        
+      
+    
+    </summary>
+    
+    
+      <category term="Serverless" scheme="https://chumper.cn/categories/Serverless/"/>
+    
+    
+      <category term="Serverless" scheme="https://chumper.cn/tags/Serverless/"/>
+    
+  </entry>
   
   <entry>
     <title>如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用</title>
@@ -250,9 +321,9 @@
     
     
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
-    
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
+    
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
   </entry>
   
@@ -306,11 +377,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
   </entry>
   
