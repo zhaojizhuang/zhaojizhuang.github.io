@@ -116,7 +116,7 @@
 <meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2BqOXOd26wHFZlssB%2F-Mi2C5xPLK4DfhLP3uJ9%2Fimage.png?alt=media&token=e2e9a1ba-55fe-4904-bc60-606791c27208">
 <meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2CcLYInSulxpHWOjo%2Fimage.png?alt=media&token=cf054787-f1ae-42b9-8c35-d992207756fe">
 <meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2DeewNnusgFDrN9B1%2Fimage.png?alt=media&token=eb6e55a2-040b-499e-893e-c6d620a6e64c">
-<meta property="og:updated_time" content="2021-08-28T14:54:34.239Z">
+<meta property="og:updated_time" content="2021-08-28T15:00:40.132Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程">
 <meta name="twitter:description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium系列文章》的第二篇，本文主要介绍 Cilium 网络相关知识点，为后续 Cilium 的深入了解做铺垫。了解 Cilium 是如何在网络流转的路径中做拦截处理的  之前的">
@@ -643,6 +643,10 @@
 </li>
 </ol>
 <p>理解这些东西非常重要，因为<strong>这是 Cilium 乃至广义 datapath 里非常核心的东西</strong>。如 果遇到底层网络问题，或者需要做 Cilium/kernel 调优，必须要理解包的收发/转发 路径。</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p>[1].<br>你不好奇 Linux 网络发包过程吗: <a href="https://xie.infoq.cn/article/6ba14b756c3019cc737ed48a6" target="_blank" rel="noopener">https://xie.infoq.cn/article/6ba14b756c3019cc737ed48a6</a></p>
+<p>[2].<br>【[译] 深入理解 Cilium 的 eBPF 收发包路径（datapath）（KubeCon, 2019）】: <a href="http://arthurchiao.art/blog/understanding-ebpf-datapath-in-cilium-zh" target="_blank" rel="noopener">http://arthurchiao.art/blog/understanding-ebpf-datapath-in-cilium-zh</a></p>
+<p>[3].<br>GRO: <a href="https://zhuanlan.zhihu.com/p/44683790" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/44683790</a></p>
+<p>[4].<br>Linux 内核: <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/include/uapi/linux/pkt_cls.h#L60" target="_blank" rel="noopener">https://elixir.bootlin.com/linux/v5.14-rc7/source/include/uapi/linux/pkt_cls.h#L60</a></p>
 
       
     </div>
@@ -815,7 +819,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">9</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -867,7 +871,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-网络分层的宏观视角"><span class="nav-number">1.</span> <span class="nav-text">1. 网络分层的宏观视角</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Linux-网络协议栈"><span class="nav-number">2.</span> <span class="nav-text">2. Linux 网络协议栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Linux-接收网络包的流程"><span class="nav-number">3.</span> <span class="nav-text">3. Linux 接收网络包的流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-L1-gt-L2（物理层-gt-数据链路层）"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 L1 -&gt; L2（物理层 -&gt; 数据链路层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-L2-数据链路层"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 L2 数据链路层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L2-gt-L3（数据链路层-gt-网络层）"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 L2 -&gt; L3（数据链路层 -&gt; 网络层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L3-gt-L4（网络层-gt-传输层）"><span class="nav-number">3.4.</span> <span class="nav-text">3.3 L3 -&gt; L4（网络层 -&gt; 传输层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-12：ip-rcv-finish-处理"><span class="nav-number">3.5.</span> <span class="nav-text">Step 12：ip_rcv_finish() 处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-L4（传输层，以-UDP-为例）"><span class="nav-number">3.6.</span> <span class="nav-text">3.4 L4（传输层，以 UDP 为例）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-L4-User-Space"><span class="nav-number">3.7.</span> <span class="nav-text">3.5 L4 User Space</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-网络分层的宏观视角"><span class="nav-number">1.</span> <span class="nav-text">1. 网络分层的宏观视角</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Linux-网络协议栈"><span class="nav-number">2.</span> <span class="nav-text">2. Linux 网络协议栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Linux-接收网络包的流程"><span class="nav-number">3.</span> <span class="nav-text">3. Linux 接收网络包的流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-L1-gt-L2（物理层-gt-数据链路层）"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 L1 -&gt; L2（物理层 -&gt; 数据链路层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-L2-数据链路层"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 L2 数据链路层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L2-gt-L3（数据链路层-gt-网络层）"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 L2 -&gt; L3（数据链路层 -&gt; 网络层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L3-gt-L4（网络层-gt-传输层）"><span class="nav-number">3.4.</span> <span class="nav-text">3.3 L3 -&gt; L4（网络层 -&gt; 传输层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-12：ip-rcv-finish-处理"><span class="nav-number">3.5.</span> <span class="nav-text">Step 12：ip_rcv_finish() 处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-L4（传输层，以-UDP-为例）"><span class="nav-number">3.6.</span> <span class="nav-text">3.4 L4（传输层，以 UDP 为例）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-L4-User-Space"><span class="nav-number">3.7.</span> <span class="nav-text">3.5 L4 User Space</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文章"><span class="nav-number"></span> <span class="nav-text">参考文章</span></a></li></div>
             
 
           </div>
