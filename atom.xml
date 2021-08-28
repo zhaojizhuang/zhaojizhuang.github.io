@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://chumper.cn/"/>
-  <updated>2021-08-28T14:39:54.011Z</updated>
+  <updated>2021-08-28T14:54:34.239Z</updated>
   <id>https://chumper.cn/</id>
   
   <author>
@@ -21,7 +21,7 @@
     <link href="https://chumper.cn/2021/08/27/cilium02/"/>
     <id>https://chumper.cn/2021/08/27/cilium02/</id>
     <published>2021-08-27T11:16:18.000Z</published>
-    <updated>2021-08-28T14:39:54.011Z</updated>
+    <updated>2021-08-28T14:54:34.239Z</updated>
     
     <summary type="html">
     
@@ -37,10 +37,10 @@
     </summary>
     
     
-      <category term="Cilium" scheme="https://chumper.cn/categories/Cilium/"/>
+      <category term="cilium" scheme="https://chumper.cn/categories/cilium/"/>
     
     
-      <category term="Cilium" scheme="https://chumper.cn/tags/Cilium/"/>
+      <category term="cilium" scheme="https://chumper.cn/tags/cilium/"/>
     
   </entry>
   
@@ -49,7 +49,7 @@
     <link href="https://chumper.cn/2021/08/17/cilium01/"/>
     <id>https://chumper.cn/2021/08/17/cilium01/</id>
     <published>2021-08-17T12:16:18.000Z</published>
-    <updated>2021-08-28T14:21:36.378Z</updated>
+    <updated>2021-08-28T14:54:32.132Z</updated>
     
     <summary type="html">
     
@@ -65,10 +65,10 @@
     </summary>
     
     
-      <category term="Cilium" scheme="https://chumper.cn/categories/Cilium/"/>
+      <category term="cilium" scheme="https://chumper.cn/categories/cilium/"/>
     
     
-      <category term="Cilium" scheme="https://chumper.cn/tags/Cilium/"/>
+      <category term="cilium" scheme="https://chumper.cn/tags/cilium/"/>
     
   </entry>
   
@@ -333,9 +333,9 @@
     
     
     
-      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
-    
       <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+    
+      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
   </entry>
   
@@ -389,11 +389,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
   </entry>
   
