@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Cilium,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium 系列文章》的第一篇，本文主要介绍 Cilium 的发展，相关功能以及使用，深入理解及底层原理将在后续文章中继续介绍  背景随着云原生的普及率越来越高，各大厂商基本上或多">
+<meta name="keywords" content="Cilium">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【理解 Cilium 系列文章】(一) 初识 Cilium">
+<meta property="og:url" content="https://chumper.cn/2021/08/17/cilium01/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium 系列文章》的第一篇，本文主要介绍 Cilium 的发展，相关功能以及使用，深入理解及底层原理将在后续文章中继续介绍  背景随着云原生的普及率越来越高，各大厂商基本上或多">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhI1PKBbT6AggztF2Io%2F-MhI5yJjJ58bKXUgL-e9%2Fimage.png?alt=media&token=997ca893-7f8d-49e1-aeda-4653b5e02cbc">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhI1PKBbT6AggztF2Io%2F-MhI6Yc-RTsTKcR17oj9%2Fimage.png?alt=media&token=a018a444-5db6-45cb-bc07-44efeac6cb76">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhJXGud22jg_jkCC-7v%2F-MhJZwB6pLY9MtaTuyR4%2Fimage.png?alt=media&token=4bc57ed3-4e63-4c3c-b526-c8198bca0ceb">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MgnDBD5NFpGEKRXAU0A%2F-MgoOiBbBc3ptDsFPJuI%2Fimage.png?alt=media&token=2a08b60c-a353-4f3e-bee5-d5cd84015981">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhIBfaeG36XhjlMq_Bh%2F-MhIDvXCmmHTeemwAY42%2Fimage.png?alt=media&token=20546b16-d69d-4fbb-a3e1-a71b35a2a088">
+<meta property="og:updated_time" content="2021-08-28T14:21:36.378Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="【理解 Cilium 系列文章】(一) 初识 Cilium">
+<meta name="twitter:description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium 系列文章》的第一篇，本文主要介绍 Cilium 的发展，相关功能以及使用，深入理解及底层原理将在后续文章中继续介绍  背景随着云原生的普及率越来越高，各大厂商基本上或多">
+<meta name="twitter:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhI1PKBbT6AggztF2Io%2F-MhI5yJjJ58bKXUgL-e9%2Fimage.png?alt=media&token=997ca893-7f8d-49e1-aeda-4653b5e02cbc">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2021/08/17/cilium01/">
+
+
+
+
+
+
+  <title>【理解 Cilium 系列文章】(一) 初识 Cilium | 赵吉壮</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9a500e4872a7cd8c52faee1611b6ea4";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2021/08/17/cilium01/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">【理解 Cilium 系列文章】(一) 初识 Cilium</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-17T20:16:18+08:00">
+                2021-08-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/Cilium/" itemprop="url" rel="index">
+                    <span itemprop="name">Cilium</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p><code>Cilium</code> 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 <code>kube-proxy</code> 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓</p>
+</blockquote>
+<blockquote>
+<p>作为<code>《理解 Cilium 系列文章》</code>的第一篇，本文主要介绍 <code>Cilium</code> 的发展，相关功能以及使用，深入理解及底层原理将在后续文章中继续介绍</p>
+</blockquote>
+<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>随着云原生的普及率越来越高，各大厂商基本上或多或少都实现了业务的 k8s 容器化，头部云计算厂商更是不用说。 </p>
+<p>而且随着 k8s 的 普及，当前集群逐渐呈现出以下两个特点：</p>
+<ol>
+<li><strong>容器数量越来越多</strong>，比如：k8s 官方单集群就已经支持 <code>15000 pod</code></li>
+<li><strong><code>Pod</code> 生命周期越来越短</strong>，<code>Serverless</code> 场景下甚至短至几分钟，几秒钟</li>
+</ol>
+<p>随着容器密度的增大，以及生命周期的变短，对原生容器网络带来的挑战也越来越大</p>
+<h3 id="当前-k8s-Service-负载均衡的实现现状"><a href="#当前-k8s-Service-负载均衡的实现现状" class="headerlink" title="当前 k8s Service 负载均衡的实现现状"></a>当前 k8s Service 负载均衡的实现现状</h3><p>在 <code>Cilium</code> 出现之前， <code>Service</code> 由 <code>kube-proxy</code> 来实现，实现方式有 <code>userspace</code>，<code>iptables</code>，<code>ipvs</code> 三种模式。</p>
+<h4 id="Userspace"><a href="#Userspace" class="headerlink" title="Userspace"></a>Userspace</h4><p>当前模式下，<code>kube-proxy</code> 作为反向代理,监听随机端口，通过 <code>iptables</code> 规则将流量重定向到代理端口，再由 <code>kube-proxy</code> 将流量转发到 后端 <code>pod</code>。<code>Service</code> 的请求会先从用户空间进入内核 <code>iptables</code>，然后再回到用户空间，代价较大，性能较差。</p>
+<h4 id="Iptables"><a href="#Iptables" class="headerlink" title="Iptables"></a>Iptables</h4><p>存在的问题：</p>
+<p>1.可扩展性差。随着 <code>service</code> 数据达到数千个，其控制面和数据面的性能都会急剧下降。原因在于 iptables 控制面的接口设计中，每添加一条规则，需要遍历和修改所有的规则，其控制面性能是<code>O(n²)</code>。在数据面，规则是用链表组织的，其性能是<code>O(n)</code></p>
+<p>2.LB 调度算法仅支持随机转发</p>
+<h4 id="Ipvs-模式"><a href="#Ipvs-模式" class="headerlink" title="Ipvs 模式"></a>Ipvs 模式</h4><p><code>IPVS</code> 是专门为 <code>LB</code> 设计的。它用 <code>hash table</code> 管理 <code>service</code>，对<code>service</code> 的增删查找都是<code>O(1)</code>的时间复杂度。不过 <code>IPVS</code> 内核模块没有 <code>SNAT</code> 功能，因此借用了 <code>iptables</code> 的 <code>SNAT</code> 功能。</p>
+<p><code>IPVS</code> 针对报文做 <code>DNAT</code> 后，将连接信息保存在 <code>nf_conntrack</code> 中，<code>iptables</code> 据此接力做 <code>SNAT</code>。该模式是目前 <code>Kubernetes</code> 网络性能最好的选择。但是由于 <code>nf_conntrack</code> 的复杂性，带来了很大的性能损耗。腾讯针对该问题做过相应的优化<a href="https://mp.weixin.qq.com/s/yLt7NZQeVwQEF6xJruOsDg" target="_blank" rel="noopener">【绕过conntrack，使用eBPF增强 IPVS优化K8s网络性能】</a></p>
+<h3 id="Cilium-的发展"><a href="#Cilium-的发展" class="headerlink" title="Cilium 的发展"></a>Cilium 的发展</h3><p><code>Cilium</code> 是基于 <code>eBpf</code> 的一种开源网络实现，通过在 <code>Linux</code> 内核动态插入强大的安全性、可见性和网络控制逻辑，提供网络互通，服务负载均衡，安全和可观测性等解决方案。简单来说可以理解为 <strong>Kube-proxy + CNI 网络实现。</strong></p>
+<p><code>Cilium</code> 位于容器编排系统和 <code>Linux Kernel</code> 之间，向上可以通过编排平台为容器进行网络以及相应的安全配置，向下可以通过在 <code>Linux</code> 内核挂载 <code>eBPF</code> 程序，来控制容器网络的转发行为以及安全策略执行</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhI1PKBbT6AggztF2Io%2F-MhI5yJjJ58bKXUgL-e9%2Fimage.png?alt=media&amp;token=997ca893-7f8d-49e1-aeda-4653b5e02cbc" alt=""></p>
+<p>简单了解下 <code>Cilium</code> 的发展历程：</p>
+<ol>
+<li>2016 Thomas Graf 创立了 Cilium, 现为 Isovalent (Cilium 背后的商业公司)的 CTO</li>
+<li>2017 年 DockerCon 上 Cilium 第一次发布</li>
+<li>2018 年 发布 Cilium 1.0 </li>
+<li>2019 年 发布 Cilium 1.6 版本，100% 替代 kube-proxy</li>
+<li>2019 年 Google 全面参与 Cilium </li>
+<li>2021 年 微软、谷歌、FaceBook、Netflix、Isovalent 在内的多家企业宣布成立 eBPF 基金会(Linux 基金会下)</li>
+</ol>
+<h3 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h3><p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhI1PKBbT6AggztF2Io%2F-MhI6Yc-RTsTKcR17oj9%2Fimage.png?alt=media&amp;token=a018a444-5db6-45cb-bc07-44efeac6cb76" alt=""></p>
+<p>查看官网，可以看到 <code>Cilium</code> 的功能主要包含 三个方面，如上图</p>
+<p>一、网络</p>
+<ol>
+<li>高度可扩展的 <code>kubernetes</code> <code>CNI</code> 插件，支持大规模，高动态的 <code>k8s</code> 集群环境。支持多种租网模式: <ol>
+<li><code>Overlay</code> 模式，支持 <code>Vxlan</code> 及 <code>Geneve</code></li>
+<li><code>Unerlay</code> 模式，通过 <code>Direct Routing</code> （直接路由）的方式，通过 <code>Linux</code> 宿主机的路由表进行转发</li>
+</ol>
+</li>
+<li><code>kube-proxy</code> 替代品，实现了 四层负载均衡功能。<code>LB</code> 基于 <code>eBPF</code> 实现，使用高效的、可无限扩容的哈希表来存储信息。对于南北向负载均衡，<code>Cilium</code> 作了最大化性能的优化。支持 <code>XDP、DSR（Direct Server Return，LB</code> 仅仅修改转发封包的目标 <code>MAC</code> 地址）</li>
+<li>多集群的连通性，<a href="https://cilium.io/blog/2019/03/12/clustermesh/" target="_blank" rel="noopener">Cilium Cluster Mesh</a> 支持多集群间的负载，可观测性以及安全管控</li>
+</ol>
+<p>二、可观测性</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhJXGud22jg_jkCC-7v%2F-MhJZwB6pLY9MtaTuyR4%2Fimage.png?alt=media&amp;token=4bc57ed3-4e63-4c3c-b526-c8198bca0ceb" alt=""></p>
+<ol>
+<li>提供生产可用的可观测性工具 <code>hubble</code>, 通过 <code>pod</code> 及 <code>dns</code> 标识来识别连接信息</li>
+<li>提供 <code>L3/L4/L7</code> 级别的监控指标，以及 <code>Networkpolicy</code> 的 行为信息指标</li>
+<li>API 层面的可观测性 (http,https)</li>
+<li><code>Hubble</code> 除了自身的监控工具，还可以对接像 <code>Prometheus、Grafana</code> 等主流的云原生监控体系，实现可扩展的监控策略</li>
+</ol>
+<p>三、安全</p>
+<ol>
+<li>不仅支持 k8s <code>Network Policy</code>，还支持 <code>DNS</code> 级别、<code>API</code> 级别、以及跨集群级别的 <code>Network Policy</code></li>
+<li>支持 <code>ip</code> 端口 的 安全审计日志</li>
+<li>传输加密</li>
+</ol>
+<p>总结，<strong>Cilium 不仅包括了 kube-proxy + CNI 网络实现，还包含了众多可观测性和安全方面的特性。</strong></p>
+<h3 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h3><blockquote>
+<p>linux 内核要求 <code>4.19</code> 及以上</p>
+</blockquote>
+<p>可以采用 <code>helm</code> 或者 <code>cilium cli</code>，此处笔者使用的是 <code>cilium cli</code>（版本为 <code>1.10.3</code>）</p>
+<ol>
+<li>下载 <code>cilium cli</code></li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz</span><br><span class="line">tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>安装 <code>cilium</code></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cilium install --kube-proxy-replacement=strict <span class="comment"># 此处选择的是完全替换，默认情况下是 probe，(该选项下 pod hostport 特性不支持)</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>可视化组件 hubble(选装)</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cilium hubble <span class="built_in">enable</span> --ui</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>等待 pod ready 后，查看 状态如下：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">~<span class="comment"># cilium status</span></span><br><span class="line">    /¯¯\</span><br><span class="line"> /¯¯\__/¯¯\    Cilium:         OK</span><br><span class="line"> \__/¯¯\__/    Operator:       OK</span><br><span class="line"> /¯¯\__/¯¯\    Hubble:         OK</span><br><span class="line"> \__/¯¯\__/    ClusterMesh:    disabled</span><br><span class="line">    \__/</span><br><span class="line"></span><br><span class="line">DaemonSet         cilium             Desired: 1, Ready: 1/1, Available: 1/1</span><br><span class="line">Deployment        cilium-operator    Desired: 1, Ready: 1/1, Available: 1/1</span><br><span class="line">Deployment        hubble-relay       Desired: 1, Ready: 1/1, Available: 1/1</span><br><span class="line">Containers:       hubble-relay       Running: 1</span><br><span class="line">                  cilium             Running: 1</span><br><span class="line">                  cilium-operator    Running: 1</span><br><span class="line">Image versions    cilium             quay.io/cilium/cilium:v1.10.3: 1</span><br><span class="line">                  cilium-operator    quay.io/cilium/operator-generic:v1.10.3: 1</span><br><span class="line">                  hubble-relay       quay.io/cilium/hubble-relay:v1.10.3: 1</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li><code>cilium cli</code> 还支持 集群可用性检查（可选）</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[root@~]<span class="comment"># cilium connectivity test</span></span><br><span class="line">ℹ️  Single-node environment detected, enabling single-node connectivity <span class="built_in">test</span></span><br><span class="line">ℹ️  Monitor aggregation detected, will skip some flow validation steps</span><br><span class="line">✨ [kubernetes] Creating namespace <span class="keyword">for</span> connectivity check...</span><br><span class="line">✨ [kubernetes] Deploying <span class="built_in">echo</span>-same-node service...</span><br><span class="line">✨ [kubernetes] Deploying same-node deployment...</span><br><span class="line">✨ [kubernetes] Deploying client deployment...</span><br><span class="line">✨ [kubernetes] Deploying client2 deployment...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> deployments [client client2 <span class="built_in">echo</span>-same-node] to become ready...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> deployments [] to become ready...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> CiliumEndpoint <span class="keyword">for</span> pod cilium-test/client-6488dcf5d4-rx8kh to appear...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> CiliumEndpoint <span class="keyword">for</span> pod cilium-test/client2-65f446d77c-97vjs to appear...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> CiliumEndpoint <span class="keyword">for</span> pod cilium-test/<span class="built_in">echo</span>-same-node-745bd5c77-gr2p6 to appear...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> Service cilium-test/<span class="built_in">echo</span>-same-node to become ready...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> NodePort 10.251.247.131:31032 (cilium-test/<span class="built_in">echo</span>-same-node) to become ready...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> Cilium pod kube-system/cilium-vsk8j to have all the pod IPs <span class="keyword">in</span> eBPF ipcache...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> pod cilium-test/client-6488dcf5d4-rx8kh to reach default/kubernetes service...</span><br><span class="line">⌛ [kubernetes] Waiting <span class="keyword">for</span> pod cilium-test/client2-65f446d77c-97vjs to reach default/kubernetes service...</span><br><span class="line">ð­ Enabling Hubble telescope...</span><br><span class="line">⚠️  Unable to contact Hubble Relay, disabling Hubble telescope and flow validation: rpc error: code = Unavailable desc = connection error: desc = <span class="string">"transport: Error while dialing dial tcp [::1]:4245: connect: connection refused"</span></span><br><span class="line">ℹ️  Expose Relay locally with:</span><br><span class="line">   cilium hubble <span class="built_in">enable</span></span><br><span class="line">   cilium status --<span class="built_in">wait</span></span><br><span class="line">   cilium hubble port-forward&amp;</span><br><span class="line">ð Running tests...</span><br></pre></td></tr></table></figure>
+<p>等 <code>hubble</code> 安装完成后，<code>hubble-ui</code> <code>service</code> 修改为 <code>NodePort</code>类型, 即可通过 <code>NodeIP+NodePort</code> 来登录 <code>Hubble</code> 界面 查看相关信息</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MgnDBD5NFpGEKRXAU0A%2F-MgoOiBbBc3ptDsFPJuI%2Fimage.png?alt=media&amp;token=2a08b60c-a353-4f3e-bee5-d5cd84015981" alt=""></p>
+<p><code>Cilium</code> 部署完后，有以下几个组件 <code>operator</code>、<code>hubble(ui, relay)</code>,<code>Cilium agent</code>（<code>Daemonset</code> 形式，每个节点一个），其中关键组件为 <code>cilium agent</code>。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhIBfaeG36XhjlMq_Bh%2F-MhIDvXCmmHTeemwAY42%2Fimage.png?alt=media&amp;token=20546b16-d69d-4fbb-a3e1-a71b35a2a088" alt=""></p>
+<p>Cilium Agent作为整个架构中最核心的组件，通过DaemonSet的方式，以特权容器的模式，运行在集群的每个主机上。Cilium Agent作为用户空间守护程序，通过插件与容器运行时和容器编排系统进行交互，进而为本机上的容器进行网络以及安全的相关配置。同时提供了开放的API，供其他组件进行调用。</p>
+<p>Cilium Agent在进行网络和安全的相关配置时，采用eBPF程序进行实现。Cilium Agent结合容器标识和相关的策略，生成 eBPF 程序，并将 eBPF 程序编译为字节码，将它们传递到 Linux 内核。</p>
+<h3 id="相关命令介绍"><a href="#相关命令介绍" class="headerlink" title="相关命令介绍"></a>相关命令介绍</h3><p><code>Cilium agent</code> 中内置了一些调试用的命令，下面介绍，<code>agent</code>  中的 <code>cilium</code> 不同与上述介绍的 <code>cilium cli</code> ( 虽然同为 <code>cilium</code>)</p>
+<ol>
+<li><code>cilium status</code> </li>
+</ol>
+<p>主要展示  <code>cilium</code> 的一些简单配置信息及状态，如下</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[root@~]<span class="comment"># kubectl exec -n kube-system cilium-s62h5 -- cilium status</span></span><br><span class="line">Defaulted container <span class="string">"cilium-agent"</span> out of: cilium-agent, ebpf-mount (init), clean-cilium-state (init)</span><br><span class="line">KVStore:                Ok   Disabled</span><br><span class="line">Kubernetes:             Ok   1.21 (v1.21.2) [linux/amd64]</span><br><span class="line">Kubernetes APIs:        [<span class="string">"cilium/v2::CiliumClusterwideNetworkPolicy"</span>, <span class="string">"cilium/v2::CiliumEndpoint"</span>, <span class="string">"cilium/v2::CiliumNetworkPolicy"</span>, <span class="string">"cilium/v2::CiliumNode"</span>, <span class="string">"core/v1::Namespace"</span>, <span class="string">"core/v1::Node"</span>, <span class="string">"core/v1::Pods"</span>, <span class="string">"core/v1::Service"</span>, <span class="string">"discovery/v1::EndpointSlice"</span>, <span class="string">"networking.k8s.io/v1::NetworkPolicy"</span>]</span><br><span class="line">KubeProxyReplacement:   Strict   [eth0 10.251.247.131 (Direct Routing)]</span><br><span class="line">Cilium:                 Ok   1.10.3 (v1.10.3-4145278)</span><br><span class="line">NodeMonitor:            Listening <span class="keyword">for</span> events on 8 CPUs with 64x4096 of shared memory</span><br><span class="line">Cilium health daemon:   Ok</span><br><span class="line">IPAM:                   IPv4: 68/254 allocated from 10.0.0.0/24,</span><br><span class="line">BandwidthManager:       Disabled</span><br><span class="line">Host Routing:           Legacy</span><br><span class="line">Masquerading:           BPF   [eth0]   10.0.0.0/24 [IPv4: Enabled, IPv6: Disabled]</span><br><span class="line">Controller Status:      346/346 healthy</span><br><span class="line">Proxy Status:           OK, ip 10.0.0.167, 0 redirects active on ports 10000-20000</span><br><span class="line">Hubble:                 Ok   Current/Max Flows: 4095/4095 (100.00%), Flows/s: 257.25   Metrics: Disabled</span><br><span class="line">Encryption:             Disabled</span><br><span class="line">Cluster health:         1/1 reachable   (2021-08-11T09:33:31Z)</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li><code>cilium service list</code>  </li>
+</ol>
+<p>展示 <code>service</code> 的实现，使用时可通过 <code>ClusterIP</code> 来过滤，其中，<code>FrontEnd</code> 为 <code>ClusterIP</code>，<code>Backend</code> 为 <code>PodIP</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[root@~]<span class="comment"># kubectl exec -it -n kube-system cilium-vsk8j -- cilium service list</span></span><br><span class="line">Defaulted container <span class="string">"cilium-agent"</span> out of: cilium-agent, ebpf-mount (init), clean-cilium-state (init)</span><br><span class="line">ID    Frontend                 Service Type   Backend</span><br><span class="line">1     10.111.192.31:80         ClusterIP      1 =&gt; 10.0.0.212:8888</span><br><span class="line">2     10.101.111.124:8080      ClusterIP      1 =&gt; 10.0.0.81:8080</span><br><span class="line">3     10.101.229.121:443       ClusterIP      1 =&gt; 10.0.0.24:8443</span><br><span class="line">4     10.111.165.162:8080      ClusterIP      1 =&gt; 10.0.0.213:8080</span><br><span class="line">5     10.96.43.229:4222        ClusterIP      1 =&gt; 10.0.0.210:4222</span><br><span class="line">6     10.100.45.225:9180       ClusterIP      1 =&gt; 10.0.0.48:9180</span><br><span class="line"><span class="comment"># 避免过多，此处不一一展示</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li><code>cilium service get</code>  </li>
+</ol>
+<p>通过 <code>cilium service get &lt; ID&gt; -o json</code> 来展示详情</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[root@~]<span class="comment"># kubectl exec -it -n kube-system cilium-vsk8j -- cilium service get 132 -o json</span></span><br><span class="line">Defaulted container <span class="string">"cilium-agent"</span> out of: cilium-agent, ebpf-mount (init), clean-cilium-state (init)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">"spec"</span>: &#123;</span><br><span class="line">    <span class="string">"backend-addresses"</span>: [</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="string">"ip"</span>: <span class="string">"10.0.0.213"</span>,</span><br><span class="line">        <span class="string">"nodeName"</span>: <span class="string">"n251-247-131"</span>,</span><br><span class="line">        <span class="string">"port"</span>: 8080</span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="string">"flags"</span>: &#123;</span><br><span class="line">      <span class="string">"name"</span>: <span class="string">"autoscaler"</span>,</span><br><span class="line">      <span class="string">"namespace"</span>: <span class="string">"knative-serving"</span>,</span><br><span class="line">      <span class="string">"trafficPolicy"</span>: <span class="string">"Cluster"</span>,</span><br><span class="line">      <span class="string">"type"</span>: <span class="string">"ClusterIP"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"frontend-address"</span>: &#123;</span><br><span class="line">      <span class="string">"ip"</span>: <span class="string">"10.98.24.168"</span>,</span><br><span class="line">      <span class="string">"port"</span>: 8080,</span><br><span class="line">      <span class="string">"scope"</span>: <span class="string">"external"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"id"</span>: 132</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="string">"status"</span>: &#123;</span><br><span class="line">    <span class="string">"realized"</span>: &#123;</span><br><span class="line">      <span class="string">"backend-addresses"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="string">"ip"</span>: <span class="string">"10.0.0.213"</span>,</span><br><span class="line">          <span class="string">"nodeName"</span>: <span class="string">"n251-247-131"</span>,</span><br><span class="line">          <span class="string">"port"</span>: 8080</span><br><span class="line">        &#125;</span><br><span class="line">      ],</span><br><span class="line">      <span class="string">"flags"</span>: &#123;</span><br><span class="line">        <span class="string">"name"</span>: <span class="string">"autoscaler"</span>,</span><br><span class="line">        <span class="string">"namespace"</span>: <span class="string">"knative-serving"</span>,</span><br><span class="line">        <span class="string">"trafficPolicy"</span>: <span class="string">"Cluster"</span>,</span><br><span class="line">        <span class="string">"type"</span>: <span class="string">"ClusterIP"</span></span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="string">"frontend-address"</span>: &#123;</span><br><span class="line">        <span class="string">"ip"</span>: <span class="string">"10.98.24.168"</span>,</span><br><span class="line">        <span class="string">"port"</span>: 8080,</span><br><span class="line">        <span class="string">"scope"</span>: <span class="string">"external"</span></span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="string">"id"</span>: 132</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>还有很多有用的命令，限于篇幅，此处不一一展示，留给读者自己去探索（<code>cilium status --help</code>）</p>
+<p><code>《理解 Cilium 系列文章》</code>的第一篇到此就讲完了，后续文章将按照 <code>Cilium</code> 涉及的基础知识及相关原理进行介绍，敬请期待</p>
+
+      
+    </div>
+    
+    
+    
+
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2021/08/17/cilium01/" title="【理解 Cilium 系列文章】(一) 初识 Cilium">https://chumper.cn/2021/08/17/cilium01/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    
+          <div>
+            <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <div style="font-weight:bold;text-align:left;font-size:16px">扫码关注公众号 Knative，了解更多云原生 Serverless，Knative 相关信息。</div>
+   <br>
+    <img id="wechat_subscriber_qcode" src="/images/wechartqcode.png" alt="zhaojizhuang wechat" align="middle" style="width: 600px; max-width: 100%;">
+ <br>
+</div>
+
+          </div>
+        
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Cilium/" rel="tag"># Cilium</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/06/27/cilium_arch/" rel="next" title="典型的 Serverless 架构是怎样的">
+                <i class="fa fa-chevron-left"></i> 典型的 Serverless 架构是怎样的
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/08/27/cilium02/" rel="prev" title="【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程">
+                【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#当前-k8s-Service-负载均衡的实现现状"><span class="nav-number">2.</span> <span class="nav-text">当前 k8s Service 负载均衡的实现现状</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Userspace"><span class="nav-number">2.1.</span> <span class="nav-text">Userspace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Iptables"><span class="nav-number">2.2.</span> <span class="nav-text">Iptables</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Ipvs-模式"><span class="nav-number">2.3.</span> <span class="nav-text">Ipvs 模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cilium-的发展"><span class="nav-number">3.</span> <span class="nav-text">Cilium 的发展</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#功能介绍"><span class="nav-number">4.</span> <span class="nav-text">功能介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装部署"><span class="nav-number">5.</span> <span class="nav-text">安装部署</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#相关命令介绍"><span class="nav-number">6.</span> <span class="nav-text">相关命令介绍</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

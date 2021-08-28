@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Cilium,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="赵吉壮" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium系列文章》的第二篇，本文主要介绍 Cilium 网络相关知识点，为后续 Cilium 的深入了解做铺垫。了解 Cilium 是如何在网络流转的路径中做拦截处理的  之前的">
+<meta name="keywords" content="Cilium">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程">
+<meta property="og:url" content="https://chumper.cn/2021/08/27/cilium02/index.html">
+<meta property="og:site_name" content="赵吉壮">
+<meta property="og:description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium系列文章》的第二篇，本文主要介绍 Cilium 网络相关知识点，为后续 Cilium 的深入了解做铺垫。了解 Cilium 是如何在网络流转的路径中做拦截处理的  之前的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0NtYOTGGi7_8_4CBn%2Fimage.png?alt=media&token=8d95ed4a-f43c-4767-9c8e-75311d2d8140">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0r3j5W9UT1vSclV58%2Fimage.png?alt=media&token=52963a38-d26c-46fd-a21c-484a3fbfe2ea">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0ekOW0BkAVYEzxMYv%2Fimage.png?alt=media&token=6d61c622-0579-4628-9ff7-cd74b499e18f">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0ekOW0BkAVYEzxMYv%2Fimage.png?alt=media&token=6d61c622-0579-4628-9ff7-cd74b499e18f">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0sZFDaauCTBjWJTVC%2Fimage.png?alt=media&token=fbf316c6-b37f-4b54-9756-984a09a55a63">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0w5IwYsTnKzpm2YZH%2Fimage.png?alt=media&token=a5746bc3-53a8-46a0-9a58-6c56f930bfd6">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0xrJu1ACCOdHjbzFg%2Fimage.png?alt=media&token=677303a2-b2e2-46d6-b3aa-c48e94670bd1">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi12ZEl5iDjbD78f_-h%2Fimage.png?alt=media&token=ab5c93a0-3a98-416f-a591-f23b26ccaa8c">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1K0dQDwidoIT5Hken%2Fimage.png?alt=media&token=713e76b7-52c4-421e-9994-1bda8c146d72">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1L0_8YM-9b1Cw08Eo%2Fimage.png?alt=media&token=3f1806a5-aea4-4631-9c9e-4a1d6f585c78">
+<meta property="og:image" content="https://github.com/zhaojizhuang/note/raw/master/.gitbook/assets/image%20%2877%29.png">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1QYDRP3JohVIQHsPo%2Fimage.png?alt=media&token=a05ec3de-e3f8-472d-ac10-31970e53167b">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi2-UYjGDugUhBuqeTi%2Fimage.png?alt=media&token=ce513e18-0715-42f5-abcf-5b875c48d4e8">
+<meta property="og:image" content="https://firebasestorage.googleapis.com/v0/b/gitbook-28427.appspot.com/o/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi21kU9llAM0l3ayxCC%2Fimage.png?alt=media&token=f72566a7-0040-4bf7-b662-2fef9393c5c6">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi22_-_fa67WM9PJYoX%2Fimage.png?alt=media&token=01b82404-ccfd-43bc-9bf2-44570a49b758">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi26vdaVXqzJ3hfRmmI%2Fimage.png?alt=media&token=22ead006-81f2-4369-9dc7-10db4528ce36">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi27lqNJBLGwFqxDJke%2Fimage.png?alt=media&token=bf1d29b0-d5ba-43a3-9e1d-cd9071bdc64f">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi28IIaOJ0geSOfipSf%2Fimage.png?alt=media&token=11b63115-3fc8-4a3a-aff6-2a77129466d7">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi29IGJeMYu7OdaIbBY%2Fimage.png?alt=media&token=9e38609c-875a-4060-9c46-e6e1eb162fef">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi29oFlbgKFAkroijge%2Fimage.png?alt=media&token=86a378ab-720e-4e18-b524-eeaa3097ecef">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2A8GVCFiJXqvpQDBo%2Fimage.png?alt=media&token=e35d4bbd-4e81-4371-a386-31b81f6a1c66">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2ASm5Oql3a7Mn_zrP%2Fimage.png?alt=media&token=f18aae2d-4adb-49c9-a90f-3d6158d4b72a">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2BMFwxNmXZ0P8nq50%2Fimage.png?alt=media&token=457f77ff-06d4-4052-bd9b-97629586f653">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2BqOXOd26wHFZlssB%2F-Mi2BtNoJHdAu2hCe1uM%2Fimage.png?alt=media&token=0ab6ac16-1b1a-48dc-ae0a-5a8e7063209a">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2BqOXOd26wHFZlssB%2F-Mi2C5xPLK4DfhLP3uJ9%2Fimage.png?alt=media&token=e2e9a1ba-55fe-4904-bc60-606791c27208">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2CcLYInSulxpHWOjo%2Fimage.png?alt=media&token=cf054787-f1ae-42b9-8c35-d992207756fe">
+<meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2DeewNnusgFDrN9B1%2Fimage.png?alt=media&token=eb6e55a2-040b-499e-893e-c6d620a6e64c">
+<meta property="og:updated_time" content="2021-08-28T14:39:54.011Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程">
+<meta name="twitter:description" content="Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓   作为《理解 Cilium系列文章》的第二篇，本文主要介绍 Cilium 网络相关知识点，为后续 Cilium 的深入了解做铺垫。了解 Cilium 是如何在网络流转的路径中做拦截处理的  之前的">
+<meta name="twitter:image" content="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0NtYOTGGi7_8_4CBn%2Fimage.png?alt=media&token=8d95ed4a-f43c-4767-9c8e-75311d2d8140">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="https://chumper.cn/2021/08/27/cilium02/">
+
+
+
+
+
+
+  <title>【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程 | 赵吉壮</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9a500e4872a7cd8c52faee1611b6ea4";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">赵吉壮</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">专注 k8s go docker</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-ebook">
+          <a href="/ebook/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            电子书
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2021/08/27/cilium02/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zhaojizhuang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="赵吉壮">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-27T19:16:18+08:00">
+                2021-08-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/Cilium/" itemprop="url" rel="index">
+                    <span itemprop="name">Cilium</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>Cilium 作为近两年最火的云原生网络方案，可谓是风头无两。作为第一个通过 ebpf 实现了 kube-proxy 所有功能的网络插件，它的神秘面纱究竟是怎样的呢？本系列文章将带大家一起来慢慢揭晓</p>
+</blockquote>
+<blockquote>
+<p>作为《理解 Cilium系列文章》的第二篇，本文主要介绍 Cilium 网络相关知识点，为后续 Cilium 的深入了解做铺垫。了解 Cilium 是如何在网络流转的路径中做拦截处理的</p>
+</blockquote>
+<p>之前的两篇文章<a href="https://mp.weixin.qq.com/s/rq5N-Th-TKTv1Wm-YY9hWw" target="_blank" rel="noopener">【25 张图，一万字，拆解 Linux 网络包发送过程】</a><a href="https://mp.weixin.qq.com/s/EYHLjujhAWvAUBHvsLtJiw" target="_blank" rel="noopener">【图解Linux网络包接收过程】</a>主要从源码层次介绍了 Linux 网络收发包的流程，感兴趣的同学可以看一下，读完上述两篇再看本篇将会更轻松 。</p>
+<h3 id="1-网络分层的宏观视角"><a href="#1-网络分层的宏观视角" class="headerlink" title="1. 网络分层的宏观视角"></a>1. 网络分层的宏观视角</h3><p>想必大家都应该准备过这样一道面试题 <code>从输入 URL 到收到请求响应，中间发生了什么事情</code> ，笔者当年校招时就经常被问到这个题目。</p>
+<p>这个过程讲复杂了，恐怕讲个一天一夜也讲不完。此处咱们长话短说，简要描述下大体流程，先建立个宏观视角。</p>
+<p><strong>先复习下网络分层模型</strong></p>
+<p>如下 左图 为 <strong>OSI 的标准七层 网络模型</strong>，这套模型只是停留在概念上的，实现起来太复杂了。右边是业界标准的 <strong>TCP/IP 模型</strong>，Linux 系统中正是按照 TCP/IP 模型开发的网络协议栈。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0NtYOTGGi7_8_4CBn%2Fimage.png?alt=media&amp;token=8d95ed4a-f43c-4767-9c8e-75311d2d8140" alt=""></p>
+<p>接下来回到上文的问题 <code>从输入 URL 到收到请求响应，中间发生了什么事情</code></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0r3j5W9UT1vSclV58%2Fimage.png?alt=media&amp;token=52963a38-d26c-46fd-a21c-484a3fbfe2ea" alt=""></p>
+<p>此处简要描述下流程，限于篇幅不一一展开了，当然如果小伙伴对其中某些知识点感兴趣的话，可以自行搜索相关材料继续深入研究。</p>
+<ol>
+<li>客户端发起网络请求，<code>用户态</code>的应用程序（浏览器）会生成 HTTP 请求报文、并通过 DNS 协议查找到对应的远端 IP 地址。</li>
+<li><code>用户态</code>的应用程序（浏览器) 会委托操作系统<code>内核</code>协议栈中的上半部分，也就是 TCP/UDP 协议发起连接请求。此处封装 TCP 头(或 UDP 头)</li>
+<li>然后经由协议栈下半部分的 IP 协议进行封装，然后交给下层协议。此处封装 IP 头</li>
+<li>经过 MAC 层处理，找到接收方的目标 MAC 地址。此处封装 MAC 头。</li>
+<li>最终数据包在经过网卡转化成电信号经过交换机、路由器发送到服务端，服务端经过处理拿到数据，再通过各种网络协议依次把封装的头解封装，把数据响应给客户端。</li>
+<li>客户端拿到数据进行渲染。</li>
+</ol>
+<h3 id="2-Linux-网络协议栈"><a href="#2-Linux-网络协议栈" class="headerlink" title="2. Linux 网络协议栈"></a>2. Linux 网络协议栈</h3><p>上面讲述了网络分层原理以及各层的封包解包流程，下面介绍下 Linux 网络协议栈，其实 Linux 网络协议栈就类似于 TCP/IP 的四层结构：</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0ekOW0BkAVYEzxMYv%2Fimage.png?alt=media&amp;token=6d61c622-0579-4628-9ff7-cd74b499e18f" alt=""></p>
+<p>通过上图可以看到：</p>
+<ul>
+<li>应用程序需要通过系统调用，来跟 Socket 层进行数据交互；</li>
+<li>Socket 层的下面就是传输层、网络层和网络接口层；</li>
+<li>最下面的一层，则是网卡驱动程序和硬件网卡设备；</li>
+</ul>
+<h3 id="3-Linux-接收网络包的流程"><a href="#3-Linux-接收网络包的流程" class="headerlink" title="3. Linux 接收网络包的流程"></a>3. Linux 接收网络包的流程</h3><p>同样的，先来个宏观视角，然后再一一介绍，避免一开始就陷入细节无法自拔</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0ekOW0BkAVYEzxMYv%2Fimage.png?alt=media&amp;token=6d61c622-0579-4628-9ff7-cd74b499e18f" alt=""></p>
+<blockquote>
+<p>图片取自<a href="https://xie.infoq.cn/article/6ba14b756c3019cc737ed48a6" title="你不好奇 Linux 网络发包过程吗" target="_blank" rel="noopener">《你不好奇 Linux 网络发包过程吗？》</a></p>
+</blockquote>
+<p>可以看到上图比之前介绍的网络封包解包相比，多了下面网卡相关的内容。是的，因为咱们要介绍的是 Cilium 相关的网络基础，所以需要了解 <strong>数据包是如何穿过 network datapath 的</strong>：包括从<strong>硬件到 内核，再到用户空间</strong>。图中有 Cilium logo 的地方，都是 datapath 上 Cilium 重度使用 BPF 程序的地方。</p>
+<blockquote>
+<p>参考 <a href="http://arthurchiao.art/blog/understanding-ebpf-datapath-in-cilium-zh" title="【[译] 深入理解 Cilium 的 eBPF 收发包路径（datapath）（KubeCon, 2019）】" target="_blank" rel="noopener">【[译] 深入理解 Cilium 的 eBPF 收发包路径（datapath）（KubeCon, 2019）】</a></p>
+</blockquote>
+<p>下面将分层 介绍：</p>
+<h4 id="3-1-L1-gt-L2（物理层-gt-数据链路层）"><a href="#3-1-L1-gt-L2（物理层-gt-数据链路层）" class="headerlink" title="3.1 L1 -&gt; L2（物理层 -&gt; 数据链路层）"></a>3.1 L1 -&gt; L2（物理层 -&gt; 数据链路层）</h4><p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0sZFDaauCTBjWJTVC%2Fimage.png?alt=media&amp;token=fbf316c6-b37f-4b54-9756-984a09a55a63" alt=""></p>
+<p>网卡收包简要流程：</p>
+<ol>
+<li>网卡驱动初始化。<ol>
+<li>网卡获得一块物理内存，作用收发包的缓冲区（ring-buffer）。这种方式称为 DMA（直接内存访问）。</li>
+<li>驱动向内核 NAPI（New API）注册一个轮询（poll ）方法。</li>
+</ol>
+</li>
+<li>网卡从网络中收到一个包，通过 DMA 方式将包放到 Ring Buffer，这是一个环形缓冲区。</li>
+<li>如果此时 NAPI 没有在执行，网卡就会触发一个硬件中断（HW IRQ），告诉处理器 DMA 区域中有包等待处理。</li>
+<li>收到硬中断信号后，处理器开始执行 <strong>NAPI</strong>。</li>
+<li><strong>NAPI</strong> 执行网卡注册的 poll 方法开始收包。</li>
+</ol>
+<p>关于 NAPI poll 机制：</p>
+<ul>
+<li>Linux 内核在 2.6 版本中引入了 <strong>NAPI 机制</strong>，它是混合「中断和轮询」的方式来接收网络包，它的核心概念就是<strong>不采用中断的方式读取数据</strong>，而是首先采用中断唤醒数据接收的服务程序，然后 <code>poll</code> 的方法来轮询数据。</li>
+<li>驱动注册的这个 poll 是一个<strong>主动式 poll</strong>（active poll），执行 poll 方法的是运行在某个或者所有 CPU 上的<strong>内核线程</strong>（kernel thread），一旦执行就会持续处理 ，直到没有数据可供处理，然后进入 idle 状态。</li>
+<li>比如，当有网络包到达时，网卡发起硬件中断，于是会执行网卡硬件中断处理函数，<strong>中断处理函数处理完需要「暂时屏蔽中断」，然后唤醒「软中断」来轮询处理数据，不断从驱动的 DMA 区域内接收数据包直到没有新数据时才恢复中断，这样一次中断处理多个网络包</strong>，于是就可以降低网卡中断带来的性能开销。</li>
+<li>之所以会有这种机制，是因为硬件中断代价太 高了，因为它们比系统上几乎所有东西的优先级都要高。</li>
+</ul>
+<p>NAPI 驱动的 poll 机制将数据从 DMA 区域读取出来，对数据做一些准备工作，然后交给比 它更上一层的内核协议栈。</p>
+<h4 id="3-2-L2-数据链路层"><a href="#3-2-L2-数据链路层" class="headerlink" title="3.2 L2 数据链路层"></a>3.2 L2 数据链路层</h4><p>此处不会过多展示驱动层做的事情，主要关注 Cilium 涉及到的流程，即 内核及以上的流程，主要包括</p>
+<ul>
+<li>分配 socket buffers（skb）</li>
+<li>BPF</li>
+<li>iptables</li>
+<li>将包送到网络栈（network stack）和用户空间</li>
+</ul>
+<p><strong>Step 1：NAPI poll</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0w5IwYsTnKzpm2YZH%2Fimage.png?alt=media&amp;token=a5746bc3-53a8-46a0-9a58-6c56f930bfd6" alt=""></p>
+<p>首先，NAPI poll 机制不断调用驱动实现的 poll 方法，后者处理 RX 队列内的包，并最终 将包送到正确的程序。也就是前面的公众号介绍的 XDP<a href="https://mp.weixin.qq.com/s/KSWrvOmKeX-74RU5d6NUlQ" target="_blank" rel="noopener">【Linux网络新技术基石——eBPF、XDP】</a>。</p>
+<p><strong>Step 2：XDP 程序处理</strong></p>
+<p>XDP全称为<strong>eXpress Data Path</strong>，是Linux内核网络栈的最底层。<strong>它只存在于RX（接收数据）路径上，</strong>允许在网络设备驱动内部网络堆栈中数据来源最早的地方进行数据包处理，在特定模式下可以在操作系统分配内存（<strong>skb</strong>）之前就已经完成处理</p>
+<p>插播一下 XDP 的工作模式</p>
+<blockquote>
+<p>XDP 有三种工作模式，默认是 <code>native</code>（原生）模式，当讨论 XDP 时通常隐含的都是指这 种模式。</p>
+<ul>
+<li><p><strong>Native XDP</strong></p>
+<p>XDP 程序 hook 到网络设备的驱动上，它是XDP最原始的模式，因为还是先于操作系统进行数据处理，它的执行性能还是很高的，当然需要网卡驱动支持。大部分广泛使用的 10G 及更高速的网卡都已经支持这种模式 。</p>
+</li>
+<li><p><strong>Offloaded XDP</strong></p>
+<p>XDP程序直接hook到可编程网卡硬件设备上，与其他两种模式相比，它的处理性能最强；由于处于数据链路的最前端，过滤效率也是最高的。如果需要使用这种模式，需要在加载程序时明确声明。</p>
+</li>
+<li><p><strong>Generic XDP</strong></p>
+<p>对于还没有实现 native 或 offloaded XDP 的驱动，内核提供了一个 generic XDP 选 项，这是操作系统内核提供的<strong>通用 XDP兼容模式</strong>，它可以在没有硬件或驱动程序支持的主机上执行XDP程序。在这种模式下，XDP的执行是由操作系统本身来完成的，以模拟native模式执行。好处是，只要内核够高，人人都能玩XDP；缺点是由于是仿真执行，需要分配额外的套接字缓冲区（SKB），导致处理性能下降，跟native模式在10倍左右的差距。</p>
+</li>
+</ul>
+</blockquote>
+<p>对于在生产环境使用 XDP，推荐要么选择 <strong>native</strong> 要么选择 <strong>offloaded</strong> 模式。这两种模式需要网卡驱动的支持，对于那些<strong>不支持 XDP 的驱动</strong>，内核提供了 <strong>Generic XDP</strong> ，这是软件实现的 XDP，性能会低一些， 在实现上就是将 XDP 的执行上移到了核心网络栈</p>
+<p>继续回来介绍 ，分两种情况：native/offloaded 模式、general 模式</p>
+<p><strong>(1) native/offloaded 模式</strong>：XDP 在内核收包函数 <code>receive_skb() 之前</code></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi0xrJu1ACCOdHjbzFg%2Fimage.png?alt=media&amp;token=677303a2-b2e2-46d6-b3aa-c48e94670bd1" alt=""></p>
+<p><strong>(2) Generic XDP 模式</strong>：XDP 在内核收包函数 <strong>receive_skb() 之后</strong>，</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi12ZEl5iDjbD78f_-h%2Fimage.png?alt=media&amp;token=ab5c93a0-3a98-416f-a591-f23b26ccaa8c" alt=""></p>
+<p>XDP 程序返回一个判决结果给驱动，可以是 <strong>PASS</strong>, <strong>TRANSMIT</strong>, 或 <strong>DROP</strong></p>
+<ul>
+<li><strong>TRANSMIT</strong> 非常有用，有了这个功能，就可以用 XDP <strong>实现一个 TCP/IP 负载均衡器</strong>。 XDP <strong>只适合对包进行较小修改</strong>，如果是大动作修改，那这样的 XDP 程序的性能 可能并不会很高，因为这些操作会<strong>降低 poll 函数处理 DMA ring-buffer 的能力</strong>。</li>
+<li>如果返回的是 <strong>DROP</strong>，这个包就可以直接<strong>原地丢弃</strong>了，而 无需再穿越后面复杂的协议栈然后再在某个地方被丢弃，从而节省了大量资源。在业界最出名的一个应用场景就是 Facebook 基于 XDP 实现高效的防 DDoS 攻击，其本质上就是实现尽可能早地实现「丢包」，而不去消耗系统资源创建完整的网络栈链路，即「<strong>early drop</strong>」。</li>
+<li>如果返回是 <strong>PASS</strong>，内核会继续沿着默认路径处理包，如果是 <strong>native/offloaded 模式 ，</strong>后续到达 <code>clean_rx()</code> 方法；如果是 <strong>Generic XDP 模式</strong>，将导到 <code>check_taps()</code>下面的 <strong>Step 6</strong> 继续讲解。</li>
+</ul>
+<p><strong>Step 3：<code>clean_rx()</code>：创建 skb</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1K0dQDwidoIT5Hken%2Fimage.png?alt=media&amp;token=713e76b7-52c4-421e-9994-1bda8c146d72" alt=""></p>
+<p>如果 XDP 返回是 PASS，内核会继续沿着默认路径处理包，到达 <code>clean_rx()</code> 方法。</p>
+<p>这个方法<strong>创建一个 socket buffer（skb）对象</strong>，可能还会更新一些统计信息，对 skb 进行硬件校验和检查，然后将其交给 <code>gro_receive()</code> 方法。</p>
+<p><strong>Step 4：<code>gro_receive()</code></strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1L0_8YM-9b1Cw08Eo%2Fimage.png?alt=media&amp;token=3f1806a5-aea4-4631-9c9e-4a1d6f585c78" alt=""></p>
+<p><a href="https://zhuanlan.zhihu.com/p/44683790" title="GRO" target="_blank" rel="noopener">GRO</a> (Generic Receive Offload) 是一种硬件特性的软件实现，可以简单理解成：将包交给网络协议栈之前<strong>，</strong>把相关的小包合并成一个大包。目的是减少传送给网络栈的包数，这有助于减少 CPU 的使用量，提高吞吐量。</p>
+<ol>
+<li>如果 GRO 的 buffer 相比于包太小了，它可能会选择什么都不做。</li>
+<li>如果当前包属于某个更大包的一个分片，调用 <code>enqueue_backlog</code> 将这个分片放到某个 CPU 的包队列。当包重组完成后，会交给 <code>receive_skb()</code> 方法处理。</li>
+<li>如果当前包不是分片包，直接调用 <code>receive_skb()</code>，进行一些网络栈最底层的处理。</li>
+</ol>
+<p><strong>Step 5：<code>receive_skb()</code></strong></p>
+<p><img src="https://github.com/zhaojizhuang/note/raw/master/.gitbook/assets/image%20%2877%29.png" alt=""></p>
+<p><code>receive_skb()</code> 之后会再次进入 XDP 程序点。</p>
+<h4 id="3-3-L2-gt-L3（数据链路层-gt-网络层）"><a href="#3-3-L2-gt-L3（数据链路层-gt-网络层）" class="headerlink" title="3.3 L2 -&gt; L3（数据链路层 -&gt; 网络层）"></a>3.3 L2 -&gt; L3（数据链路层 -&gt; 网络层）</h4><p><strong>Step 6：通用 XDP 处理（gXDP）</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi1QYDRP3JohVIQHsPo%2Fimage.png?alt=media&amp;token=a05ec3de-e3f8-472d-ac10-31970e53167b" alt=""></p>
+<p>上文说过，如果不支持 <strong>Native 或 Offloaded 模式的 XDP</strong> 的话，将通过 <strong>General XDP</strong> 来处理，就是此处的 <strong>(g)XDP。</strong> 此处 XDP 的行为 跟 <strong>Step 2</strong> 中一致，此处不再赘述。</p>
+<p><strong>Step 7：Tap 设备处理</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi2-UYjGDugUhBuqeTi%2Fimage.png?alt=media&amp;token=ce513e18-0715-42f5-abcf-5b875c48d4e8" alt=""></p>
+<p>图中有个 <code>*check_taps</code> 框，但其实并没有这个方法：<code>receive_skb()</code> 会轮询所有的 socket tap，将包放到正确的 tap 设备的缓冲区。</p>
+<p>tap 设备监听的是二层协议（L2 protocols）。如果 tap 设 备存在，它就可以操作这个 skb 了。</p>
+<blockquote>
+<p>Tun/Tap 设备：</p>
+</blockquote>
+<blockquote>
+<p><img src="https://firebasestorage.googleapis.com/v0/b/gitbook-28427.appspot.com/o/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi21kU9llAM0l3ayxCC%2Fimage.png?alt=media&amp;token=f72566a7-0040-4bf7-b662-2fef9393c5c6" alt=""></p>
+<p>Tun 设备是一个三层设备，从/dev/net/tun字符设备上读取的是IP数据包，写入的也只能是IP数据包，因此不能进行二层操作，如发送ARP请求和以太网广播。</p>
+<p>Tap设备是三层设备，处理的是二层 MAC 层数据帧，从/dev/net/tun字符设备上读取的是MAC 层数据帧，写入的也只能是 MAC 层数据帧。从这点来看，Tap虚拟设备和真实的物理网卡的能力更接近。</p>
+</blockquote>
+<p><strong>Step 8：<code>tc</code>（traffic classifier）处理</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi22_-_fa67WM9PJYoX%2Fimage.png?alt=media&amp;token=01b82404-ccfd-43bc-9bf2-44570a49b758" alt=""></p>
+<p>接下来是 <strong>TC (Traffic Control)</strong>, 也就是流量控制，TC更专注于<strong>packet scheduler</strong>，所谓的网络包调度器，调度网络包的延迟、丢失、传输顺序和速度控制。和 <strong>XDP</strong> 一样，TC 的输出代表了数据包如何被处置的一种动作,最新的 <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/include/uapi/linux/pkt_cls.h#L60" title="Linux 内核中" target="_blank" rel="noopener">Linux 内核中</a>定义的有 9 种动作: </p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_OK		0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_RECLASSIFY	1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_SHOT		2</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_PIPE		3</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_STOLEN		4</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_QUEUED		5</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_REPEAT		6</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_REDIRECT		7</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TC_ACT_TRAP		8</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注： Cilium 控制的网络设备，至少被加载了一个 tc eBPF 程序</p>
+</blockquote>
+<p><strong>Step 9：Netfilter 处理</strong></p>
+<p>如果 tc BPF 返回 OK，包会再次进入 Netfilter。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi26vdaVXqzJ3hfRmmI%2Fimage.png?alt=media&amp;token=22ead006-81f2-4369-9dc7-10db4528ce36" alt=""></p>
+<p>Netfilter 也会对入向的包进行处理，这里包括 <code>nftables</code> 和 <code>iptables</code> 模块。</p>
+<p><code>*def_dev_protocol</code> 框是二层过滤器（L2 net filter），由于 Cilium 没有用到任何 L2 filter，此处就不展开了。</p>
+<p><strong>Step 10：L3 协议层处理：<code>ip_rcv()</code></strong></p>
+<p>最后，如果包没有被前面丢弃，就会通过网络设备的 <code>ip_rcv()</code> 方法进入协议栈的三层（ L3）—— 即 IP 层 —— 进行处理。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi27lqNJBLGwFqxDJke%2Fimage.png?alt=media&amp;token=bf1d29b0-d5ba-43a3-9e1d-cd9071bdc64f" alt=""></p>
+<p>接下来看<code>ip_rcv()</code>(<code>但这里需要提醒大家的是，Linux 内核也支持除了 IP 之 外的其他三层协议，它们的 datapath 会与此有些不同</code>)。</p>
+<h4 id="3-3-L3-gt-L4（网络层-gt-传输层）"><a href="#3-3-L3-gt-L4（网络层-gt-传输层）" class="headerlink" title="3.3 L3 -&gt; L4（网络层 -&gt; 传输层）"></a>3.3 L3 -&gt; L4（网络层 -&gt; 传输层）</h4><p><strong>Step 11：Netfilter L4 处理</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi28IIaOJ0geSOfipSf%2Fimage.png?alt=media&amp;token=11b63115-3fc8-4a3a-aff6-2a77129466d7" alt=""></p>
+<p><code>ip_rcv()</code> 做的第一件事情是再次执行 Netfilter 过滤，因为我们现在是从四层（L4）的 视角来处理 <strong>socket buffer</strong>。因此，这里会执行 Netfilter 中的任何四层规则（L4 rules ）</p>
+<h4 id="Step-12：ip-rcv-finish-处理"><a href="#Step-12：ip-rcv-finish-处理" class="headerlink" title="Step 12：ip_rcv_finish() 处理"></a>Step 12：<code>ip_rcv_finish()</code> 处理</h4><p>Netfilter 执行完成后，调用回调函数 <code>ip_rcv_finish()</code>。  </p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi29IGJeMYu7OdaIbBY%2Fimage.png?alt=media&amp;token=9e38609c-875a-4060-9c46-e6e1eb162fef" alt=""></p>
+<p><code>ip_rcv_finish()</code> 立即调用 <code>ip_routing()</code> 对包进行路由判断。</p>
+<p><strong>Step 13：<code>ip_routing()</code> 处理</strong></p>
+<p><code>ip_routing()</code> 对包进行路由判断，例如看它是否是在 lookback 设备上，是否能 路由出去（egress），或者能否被路由，能否被 unmangle 到其他设备等等。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-MhveDRUkOaoDmvHaO9E%2F-Mi29oFlbgKFAkroijge%2Fimage.png?alt=media&amp;token=86a378ab-720e-4e18-b524-eeaa3097ecef" alt=""></p>
+<p>在 Cilium 中，如果没有使用隧道模式（tunneling），那就会用到这里的路由功能。相比 隧道模式，路由模式会的 datapath 路径更短，因此性能更高。</p>
+<p><strong>Step 14：目的是本机：<code>ip_local_deliver()</code> 处理</strong></p>
+<p>根据路由判断的结果，<strong>如果包的目的端是本机</strong>，会调用 <code>ip_local_deliver()</code> 方法。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2A8GVCFiJXqvpQDBo%2Fimage.png?alt=media&amp;token=e35d4bbd-4e81-4371-a386-31b81f6a1c66" alt=""></p>
+<p><code>ip_local_deliver()</code> 会调用 <code>xfrm4_policy()</code>。</p>
+<p><strong>Step 15：<code>xfrm4_policy()</code> 处理</strong></p>
+<p><code>xfrm4_policy()</code> 完成对包的<strong>封装、解封装、加解密</strong>等工作。例如，IPSec 就是在这里完成的。  </p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2ASm5Oql3a7Mn_zrP%2Fimage.png?alt=media&amp;token=f18aae2d-4adb-49c9-a90f-3d6158d4b72a" alt=""></p>
+<p>最后，根据四层协议的不同，<code>ip_local_deliver()</code> 会将最终的包送到 TCP 或 UDP 协议 栈。这里必须是这两种协议之一，否则设备会给源 IP 地址回一个 <code>ICMP destination unreachable</code> 消息。</p>
+<p>此处拿 UDP 协议作为例子，因为 TCP 状态机太复杂了，不适合这里用于理解 datapath 和数据流。但不是说 TCP 不重要，Linux TCP 状态机还是非常值得好好学习的。</p>
+<h4 id="3-4-L4（传输层，以-UDP-为例）"><a href="#3-4-L4（传输层，以-UDP-为例）" class="headerlink" title="3.4 L4（传输层，以 UDP 为例）"></a>3.4 L4（传输层，以 UDP 为例）</h4><p><strong>Step 16：<code>udp_rcv()</code> 处理</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2A0wcyVeO4lZaUwPd%2F-Mi2BMFwxNmXZ0P8nq50%2Fimage.png?alt=media&amp;token=457f77ff-06d4-4052-bd9b-97629586f653" alt=""></p>
+<p><code>udp_rcv()</code> 对包的合法性进行验证，检查 UDP 校验和。然后，再次将包送到 <code>xfrm4_policy()</code> 进行处理。</p>
+<p><strong>Step 17：<code>xfrm4_policy()</code> 再次处理</strong></p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2BqOXOd26wHFZlssB%2F-Mi2BtNoJHdAu2hCe1uM%2Fimage.png?alt=media&amp;token=0ab6ac16-1b1a-48dc-ae0a-5a8e7063209a" alt=""></p>
+<p>这里再次对包执行 transform policies 是因为，某些规则能指定具体的四层协议，所以只 有到了协议层之后才能执行这些策略。</p>
+<p><strong>Step 18：将包放入 <code>socket_receive_queue</code></strong></p>
+<p>这一步会拿端口（port）查找相应的 socket，然后将 skb 放到一个名为 <code>socket_receive_queue</code> 的链表。  </p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2BqOXOd26wHFZlssB%2F-Mi2C5xPLK4DfhLP3uJ9%2Fimage.png?alt=media&amp;token=e2e9a1ba-55fe-4904-bc60-606791c27208" alt=""></p>
+<p><strong>Step 19：通知 socket 收数据：<code>sk_data_ready()</code></strong></p>
+<p>最后，<code>udp_rcv()</code> 调用 <code>sk_data_ready()</code> 方法，标记这个 socket 有数据待收。  </p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2CcLYInSulxpHWOjo%2Fimage.png?alt=media&amp;token=cf054787-f1ae-42b9-8c35-d992207756fe" alt=""></p>
+<p>本质上，一个 socket 就是 Linux 中的一个文件描述符，这个描述符有一组相关的文件操 作抽象，例如 <code>read</code>、<code>write</code> 等等。</p>
+<p><strong>网络栈下半部分小结</strong></p>
+<p>以上 <strong>Step 1~19 就是 Linux 网络栈下半部分的全部内容</strong>。</p>
+<p>接下来介绍几个内核函数，都是与进程上下文相关的。</p>
+<h4 id="3-5-L4-User-Space"><a href="#3-5-L4-User-Space" class="headerlink" title="3.5 L4 User Space"></a>3.5 L4 User Space</h4><p>下图左边是一段 socket listening 程序，这里省略了错误检查，而且 <code>epoll</code> 本质上也 是不需要的，因为 UDP 的 recv 方法已经在执行 poll 操作了。</p>
+<p><img src="https://gblobscdn.gitbook.com/assets%2F-MRFeg2_Fce5b_HxlfVo%2F-Mi2CQv8otGcpCxGnoDZ%2F-Mi2DeewNnusgFDrN9B1%2Fimage.png?alt=media&amp;token=eb6e55a2-040b-499e-893e-c6d620a6e64c" alt=""></p>
+<p><strong>事实上当我们调 用 <code>recvmsg()</code> 方法时，内核所做的事情就和上面这段代码差不多</strong>。对照右边的图：</p>
+<ol>
+<li>首先初始化一个 epoll 实例和一个 UDP socket，然后告诉 epoll 实例我们想 监听这个 socket 上的 receive 事件，然后等着事件到来。</li>
+<li>当 socket buffer 收到数据时，其 wait queue 会被上一节的 <code>sk_data_ready()</code> 方法置位（标记）。</li>
+<li>epoll 监听在 wait queue，因此 epoll 收到事件通知后，提取事件内容，返回给用户空间。</li>
+<li>用户空间程序调用 <code>recv</code> 方法，它接着调用 <code>udp_recv_msg</code> 方法，后者又会 调用 <strong>cgroup eBPF 程序</strong> —— 这是本文出现的第三种 BPF 程序。<strong>Cilium 利用 cgroup eBPF 实现 socket level 负载均衡</strong>：<ul>
+<li>一般的客户端负载均衡对客户端并不是透明的，即，客户端应用必须将负载均衡逻辑内置到应用里。</li>
+<li>有了 cgroup BPF，客户端根本感知不到负载均衡的存在。</li>
+</ul>
+</li>
+<li>本文介绍的最后一种 BPF 程序是 <strong>sock_ops BPF，用于 socket level 整流</strong>（traffic shaping ），这对某些功能至关重要，例如客户端级别的限速（rate limiting）。</li>
+<li>最后，我们有一个用户空间缓冲区，存放收到的数据。</li>
+</ol>
+<p>以上就是 <strong>Cilium 涉及到网络数据包在内核流转的过程,</strong> 实际上内核 datapath 要远比这里讲的要复杂。</p>
+<ol>
+<li>前面只是非常简单地介绍了协议栈每个位置（Netfilter、iptables、eBPF、XDP）能执行的动作。</li>
+<li>这些位置提供的处理能力是不同的。例如<ol>
+<li>XDP 可能是能力最受限的，因为它只是设计用来做<strong>快速丢包</strong>（fast dropping）和 <strong>非本地重定向</strong>（non-local redirecting）；但另一方面，它又是最快的程序，因为 它在整个 datapath 的最前面，具备对整个 datapath 进行短路处理（short circuit the entire datapath）的能力。</li>
+<li>tc 和 iptables 程序能方便地 mangle 数据包，而不会对原来的转发流程产生显著影响。</li>
+</ol>
+</li>
+</ol>
+<p>理解这些东西非常重要，因为<strong>这是 Cilium 乃至广义 datapath 里非常核心的东西</strong>。如 果遇到底层网络问题，或者需要做 Cilium/kernel 调优，必须要理解包的收发/转发 路径。</p>
+
+      
+    </div>
+    
+    
+    
+
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    zhaojizhuang
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://chumper.cn/2021/08/27/cilium02/" title="【理解 Cilium 系列文章】(二) 理解网络数据包的流转过程">https://chumper.cn/2021/08/27/cilium02/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    
+          <div>
+            <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <div style="font-weight:bold;text-align:left;font-size:16px">扫码关注公众号 Knative，了解更多云原生 Serverless，Knative 相关信息。</div>
+   <br>
+    <img id="wechat_subscriber_qcode" src="/images/wechartqcode.png" alt="zhaojizhuang wechat" align="middle" style="width: 600px; max-width: 100%;">
+ <br>
+</div>
+
+          </div>
+        
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Cilium/" rel="tag"># Cilium</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/08/17/cilium01/" rel="next" title="【理解 Cilium 系列文章】(一) 初识 Cilium">
+                <i class="fa fa-chevron-left"></i> 【理解 Cilium 系列文章】(一) 初识 Cilium
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+    <div id="gitalk-container"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script type="text/javascript">
+        var gitalk = new Gitalk({
+            clientID: '9ae2de7f8db1408d1504',
+            clientSecret: 'd01059f84cfbd311a0614b07050456ed4ec8807a',
+            id: window.location.pathname,
+            repo: 'blogtalk',
+            owner: 'zhaojizhuang',
+            admin: 'zhaojizhuang'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+    
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpeg" alt="zhaojizhuang">
+            
+              <p class="site-author-name" itemprop="name">zhaojizhuang</p>
+              <p class="site-description motion-element" itemprop="description">专注 k8s go docker</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+        
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-网络分层的宏观视角"><span class="nav-number">1.</span> <span class="nav-text">1. 网络分层的宏观视角</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Linux-网络协议栈"><span class="nav-number">2.</span> <span class="nav-text">2. Linux 网络协议栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Linux-接收网络包的流程"><span class="nav-number">3.</span> <span class="nav-text">3. Linux 接收网络包的流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-L1-gt-L2（物理层-gt-数据链路层）"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 L1 -&gt; L2（物理层 -&gt; 数据链路层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-L2-数据链路层"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 L2 数据链路层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L2-gt-L3（数据链路层-gt-网络层）"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 L2 -&gt; L3（数据链路层 -&gt; 网络层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-L3-gt-L4（网络层-gt-传输层）"><span class="nav-number">3.4.</span> <span class="nav-text">3.3 L3 -&gt; L4（网络层 -&gt; 传输层）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-12：ip-rcv-finish-处理"><span class="nav-number">3.5.</span> <span class="nav-text">Step 12：ip_rcv_finish() 处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-L4（传输层，以-UDP-为例）"><span class="nav-number">3.6.</span> <span class="nav-text">3.4 L4（传输层，以 UDP 为例）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-L4-User-Space"><span class="nav-number">3.7.</span> <span class="nav-text">3.5 L4 User Space</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhaojizhuang</span>
+
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+
+    
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

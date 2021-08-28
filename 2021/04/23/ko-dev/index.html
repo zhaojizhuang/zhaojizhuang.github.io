@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="linux,epoll,">
+  <meta name="keywords" content="k8s,云原生,">
 
 
 
@@ -81,22 +81,18 @@
 
 
 
-<meta name="description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
-<meta name="keywords" content="linux,epoll">
+<meta name="description" content="Ko 是 Google 开源的一款用于构建并部署 Go 应用的工具。 这是一款简单、快速的 Go 应用镜像构建器。并与 Kubernetes 集成，能够将应用快速部署到 Kubernetes 上。是云原生时代 Kubernetes 应用开发的一大利器。 特点： 需要构建的 Go 应用对系统镜像无太多依赖（例如，无 cgo，无 OS 软件包依赖关系），最好是只有一个 go 二进制。 构建镜像的过程不">
+<meta name="keywords" content="k8s,云原生">
 <meta property="og:type" content="article">
-<meta property="og:title" content=" 谈谈 epoll ">
-<meta property="og:url" content="https://chumper.cn/2019/05/10/epoll/index.html">
+<meta property="og:title" content="如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用">
+<meta property="og:url" content="https://chumper.cn/2021/04/23/ko-dev/index.html">
 <meta property="og:site_name" content="赵吉壮">
-<meta property="og:description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
+<meta property="og:description" content="Ko 是 Google 开源的一款用于构建并部署 Go 应用的工具。 这是一款简单、快速的 Go 应用镜像构建器。并与 Kubernetes 集成，能够将应用快速部署到 Kubernetes 上。是云原生时代 Kubernetes 应用开发的一大利器。 特点： 需要构建的 Go 应用对系统镜像无太多依赖（例如，无 cgo，无 OS 软件包依赖关系），最好是只有一个 go 二进制。 构建镜像的过程不">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg">
-<meta property="og:image" content="https://pic1.zhimg.com/80/v2-90632d0dc3ded7f91379b848ab53974c_720w.jpg">
-<meta property="og:image" content="https://pic4.zhimg.com/80/v2-40bd5825e27cf49b7fd9a59dfcbe4d6f_720w.jpg">
-<meta property="og:updated_time" content="2020-07-28T09:43:32.016Z">
+<meta property="og:updated_time" content="2021-04-23T14:49:17.867Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content=" 谈谈 epoll ">
-<meta name="twitter:description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
-<meta name="twitter:image" content="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg">
+<meta name="twitter:title" content="如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用">
+<meta name="twitter:description" content="Ko 是 Google 开源的一款用于构建并部署 Go 应用的工具。 这是一款简单、快速的 Go 应用镜像构建器。并与 Kubernetes 集成，能够将应用快速部署到 Kubernetes 上。是云原生时代 Kubernetes 应用开发的一大利器。 特点： 需要构建的 Go 应用对系统镜像无太多依赖（例如，无 cgo，无 OS 软件包依赖关系），最好是只有一个 go 二进制。 构建镜像的过程不">
 
 
 
@@ -127,14 +123,14 @@
 
 
 
-  <link rel="canonical" href="https://chumper.cn/2019/05/10/epoll/">
+  <link rel="canonical" href="https://chumper.cn/2021/04/23/ko-dev/">
 
 
 
 
 
 
-  <title> 谈谈 epoll  | 赵吉壮</title>
+  <title>如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用 | 赵吉壮</title>
   
 
 
@@ -323,7 +319,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2019/05/10/epoll/">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2021/04/23/ko-dev/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="zhaojizhuang">
@@ -340,7 +336,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline"> 谈谈 epoll </h1>
+          <h1 class="post-title" itemprop="name headline">如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用</h1>
         
 
         <div class="post-meta">
@@ -352,8 +348,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-10T11:40:18+08:00">
-                2019-05-10
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-04-23T14:10:18+08:00">
+                2021-04-23
               </time>
             
 
@@ -362,6 +358,28 @@
             
           </span>
 
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/云原生/" itemprop="url" rel="index">
+                    <span itemprop="name">云原生</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -390,35 +408,50 @@
       
 
       
-        <h2 id="epoll"><a href="#epoll" class="headerlink" title="epoll"></a>epoll</h2><h2 id="IO-多路复用"><a href="#IO-多路复用" class="headerlink" title="IO 多路复用"></a>IO 多路复用</h2><p>目前支持I/O多路复用的系统调用有 <code>select，pselect，poll，epoll</code> ，I/O多路复用就是通过一种机制，<code>一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作</code></p>
-<h3 id="select"><a href="#select" class="headerlink" title="select"></a>select</h3><p>调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，<strong>可以通过遍历fdset，来找到就绪的描述符</strong>。</p>
-<p>select的流程</p>
-<p>假如程序同时监视如下图的sock1、sock2和sock3三个socket，那么在调用select之后，<strong>操作系统把进程A分别加入这三个socket的等待队列中</strong></p>
-<p><img src="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg" alt=""></p>
-<p>当任何一个socket收到数据后，中断程序将唤起进程,将进程从所有<strong>fd（socket）的等待队列中</strong>移除，再将进程加入到工作队列里面</p>
-<p>进程A被唤醒后，它知道至少有一个socket接收了数据。<strong>程序需遍历一遍socket列表，可以得到就绪的socket</strong></p>
-<p>缺点：</p>
-<ul>
-<li><p>其一，每次调用select都需要将进程加入到所有监视socket的等待队列，每次唤醒都需要从每个队列中移除。这里涉及了两次遍历，而且每次都要将整个fds列表传递给内核，有一定的开销。正是因为遍历操作开销大，出于效率的考量，才会规定select的最大监视数量，<strong>默认只能监视1024个socket</strong>。</p>
-</li>
-<li><p>其二，进程被唤醒后，程序并不知道哪些socket收到数据，还需要遍历一次。</p>
-</li>
+        <p><code>Ko</code> 是 <code>Google</code> 开源的一款用于构建并部署 <code>Go</code> 应用的工具。</p>
+<p>这是一款简单、快速的 <code>Go</code> 应用镜像构建器。并与 <code>Kubernetes</code> 集成，能够将应用快速部署到 <code>Kubernetes</code> 上。是云原生时代 <code>Kubernetes</code> 应用开发的一大利器。</p>
+<h3 id="特点："><a href="#特点：" class="headerlink" title="特点："></a>特点：</h3><ul>
+<li>需要构建的 <code>Go</code> 应用对系统镜像无太多依赖（例如，无 <code>cgo</code>，无 <code>OS</code> 软件包依赖关系），最好是只有一个 <code>go</code> 二进制。</li>
+<li>构建镜像的过程不需要 <code>Docker</code>   ，因此可以用在轻量化的 <code>CI/CD</code> 场景。</li>
+<li>支持 <code>yaml</code> 模板，可以直接用于部署 <code>Kubernetes</code> 应用。</li>
 </ul>
-<h3 id="poll与select一样，只是去掉了-1024的限制"><a href="#poll与select一样，只是去掉了-1024的限制" class="headerlink" title="poll与select一样，只是去掉了 1024的限制"></a>poll与select一样，只是去掉了 1024的限制</h3><h3 id="epoll-1"><a href="#epoll-1" class="headerlink" title="epoll"></a>epoll</h3><p><code>epoll</code> 事先通过 <code>epoll_ctl()</code> 来注册一个文件描述符，一旦基于某个文件描述符就绪时，内核会采用类似 <code>callback</code> 的回调机制，迅速激活这个文件描述符，当进程调用 <code>epoll_wait()</code> 时便得到通知。(<strong>此处去掉了遍历文件描述符，而是通过监听回调的的机制。这正是epoll的魅力所在</strong>。)</p>
-<p>epoll使<strong>用一个文件描述符(<code>eventpoll</code>)管理多个描述符</strong>，将用户关系的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> s = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);   </span><br><span class="line">bind(s, ...)</span><br><span class="line">listen(s, ...)</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> epfd = epoll_create(...);</span><br><span class="line">epoll_ctl(epfd, ...); <span class="comment">//将所有需要监听的socket添加到epfd中</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">    <span class="keyword">int</span> n = epoll_wait(...)</span><br><span class="line">    <span class="keyword">for</span>(接收到数据的socket)&#123;</span><br><span class="line">        <span class="comment">//处理</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>流程：<br>首先创建 epoll对象<br>创建epoll对象后，可以用epoll_ctl添加或删除所要监听的socket</p>
-<p>假设计算机中正在运行进程A和进程B，在某时刻进程A运行到了epoll_wait语句。如下图所示，内核会将进程A放入eventpoll的等待队列中，阻塞进程</p>
-<p><img src="https://pic1.zhimg.com/80/v2-90632d0dc3ded7f91379b848ab53974c_720w.jpg" alt=""></p>
-<p>当socket接收到数据，<strong>中断程序一方面修改rdlist</strong>，另一方面唤醒eventpoll等待队列中的进程，进程A再次进入运行状态（如下图）。也因为rdlist的存在，<strong>进程A可以知道哪些socket发生了变化</strong>。</p>
-<p><img src="https://pic4.zhimg.com/80/v2-40bd5825e27cf49b7fd9a59dfcbe4d6f_720w.jpg" alt=""></p>
-<p>参考文章 </p>
-<ol>
-<li><a href="https://www.jianshu.com/p/dfd940e7fca2" target="_blank" rel="noopener">https://www.jianshu.com/p/dfd940e7fca2</a></li>
-</ol>
-<p><a href="https://zhuanlan.zhihu.com/p/63179839" target="_blank" rel="noopener">2 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(1)</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/64138532" target="_blank" rel="noopener">3 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(2)</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/64746509" target="_blank" rel="noopener">4 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(3)</a></p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>官方地址在这 <a href="https://github.com/google/ko" target="_blank" rel="noopener">https://github.com/google/ko</a></p>
+<h3 id="1-安装-ko"><a href="#1-安装-ko" class="headerlink" title="1. 安装 ko"></a>1. 安装 ko</h3><p>此处安装的是 <code>v0.8.2</code> 版本的 <code>linux x86</code> 版本，可以根据需要自行选择版本下载</p>
+<p><strong>Release 地址:</strong> <a href="https://github.com/google/ko/releases" target="_blank" rel="noopener">https://github.com/google/ko/releases</a></p>
+<p>手动安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">curl -L https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_Linux_x86_64.tar.gz | tar xzf - ko</span><br><span class="line">chmod +x ./ko</span><br><span class="line">sudo mv ko /usr/local/bin</span><br></pre></td></tr></table></figure>
+<p>brew 安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">brew install ko</span><br></pre></td></tr></table></figure>
+<p>go install 安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">go install github.com/google/ko</span><br></pre></td></tr></table></figure>
+<h3 id="2-镜像仓库的认证"><a href="#2-镜像仓库的认证" class="headerlink" title="2. 镜像仓库的认证"></a>2. 镜像仓库的认证</h3><p>Ko 依赖的是 Docker 的镜像仓库的认证（ Docker config 文件），即 <code>~/.docker/config.json</code>  </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat ~/.docker/config.json</span><br><span class="line">&#123;</span><br><span class="line">	&quot;auths&quot;: &#123;</span><br><span class="line">		&quot;https://index.docker.io/v1/&quot;: &#123;&#125;,</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;HttpHeaders&quot;: &#123;</span><br><span class="line">		&quot;User-Agent&quot;: &quot;Docker-Client/19.03.13 (darwin)&quot;</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;credsStore&quot;: &quot;desktop&quot;,</span><br><span class="line">	&quot;experimental&quot;: &quot;disabled&quot;,</span><br><span class="line">	&quot;stackOrchestrator&quot;: &quot;swarm&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果镜像仓库没有登录过，需要先进行 <code>Docker login</code> 生成 对应的认证配置文件，比如我直接用的是 <code>docker hub</code> ,那么直接 <code>docker login</code> 即可。</p>
+<h3 id="3-设置私有仓库的地址"><a href="#3-设置私有仓库的地址" class="headerlink" title="3. 设置私有仓库的地址"></a>3. 设置私有仓库的地址</h3><p><code>Ko</code> 通过 环境变量 <code>KO_DOCKER_REPO</code>  配置私有仓库的地址, 这决定了 <code>Ko</code> 会将编译好的镜像推到哪个仓库。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"> <span class="comment"># 这是我的 dockerhub 账号，</span></span><br><span class="line"> <span class="comment"># 这里也可以设置为 docker.io/zhaojizhuang66,不过 docker 会省略掉</span></span><br><span class="line"><span class="built_in">export</span> KO_DOCKER_REPO = zhaojizhuang66</span><br></pre></td></tr></table></figure>
+<h3 id="4-镜像构建-Ko-publish"><a href="#4-镜像构建-Ko-publish" class="headerlink" title="4. 镜像构建 Ko publish"></a>4. 镜像构建 Ko publish</h3><blockquote>
+<p><strong>首先代码一定要在本地的 <code>Go path</code> 中</strong>，可以下载示例代码  <a href="https://github.com/zhaojizhuang/http-helloworld" target="_blank" rel="noopener">https://github.com/zhaojizhuang/http-helloworld</a></p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkdir -p <span class="variable">$GOPATH</span>/src/github.com</span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/github.com</span><br><span class="line">git <span class="built_in">clone</span>  https://github.com/zhaojizhuang/http-helloworld</span><br></pre></td></tr></table></figure>
+<p><code>Ko publish</code> 构建镜像，执行命令 <code>ko publish github.com/http-helloworld/cmd/helloworld</code> (main函数所在的 <code>GoPath</code> 路径)。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ko publish github.com/http-helloworld/cmd/helloworld</span><br><span class="line"></span><br><span class="line">2021/04/23 17:57:41 Using base gcr.io/distroless/static:nonroot <span class="keyword">for</span> github.com/http-helloworld/cmd/helloworld</span><br><span class="line">2021/04/23 17:57:41 No matching credentials were found <span class="keyword">for</span> <span class="string">"gcr.io/distroless/static"</span>, falling back on anonymous</span><br><span class="line">2021/04/23 17:57:45 Building github.com/http-helloworld/cmd/helloworld <span class="keyword">for</span> linux/amd64</span><br><span class="line">2021/04/23 17:57:46 Publishing zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest</span><br><span class="line">2021/04/23 17:57:52 pushed blob: sha256:a3e2b18c53ecc2aab65b3b70e5c16486e48f76490febeb68d99aa18a48265b08</span><br><span class="line">2021/04/23 17:57:52 pushed blob: sha256:72164b581b02b1eb297b403bcc8fc1bfa245cb52e103a3a525a0835a58ff58e2</span><br><span class="line">2021/04/23 17:57:56 pushed blob: sha256:5dea5ec2316d4a067b946b15c3c4f140b4f2ad607e73e9bc41b673ee5ebb99a3</span><br><span class="line">2021/04/23 17:58:07 pushed blob: sha256:d99fea081f251cc06ce68ce7cb224e2a0f63babd03ee9dd6bb03f6bf76dcb5a5</span><br><span class="line">2021/04/23 17:58:08 zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest: digest: sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0 size: 750</span><br><span class="line">2021/04/23 17:58:08 Published zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</span><br><span class="line">zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</span><br></pre></td></tr></table></figure>
+<p>也支持相对路径编译，如下</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/github.com/http-helloworld/cmd/helloworld</span><br><span class="line">ko publish ./</span><br></pre></td></tr></table></figure>
+<h3 id="5-Ko-resolve"><a href="#5-Ko-resolve" class="headerlink" title="5. Ko resolve"></a>5. Ko resolve</h3><p> 创建文件<code>deploy.yaml</code> ，yaml 内容如下</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: hello-world</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      foo: bar</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        foo: bar</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: hello-world</span><br><span class="line">        <span class="comment"># This is the import path for the Go binary to build and run.</span></span><br><span class="line">        image: ko://github.com/http-helloworld/cmd/helloworld</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 8080</span><br></pre></td></tr></table></figure>
+<p>然后执行 <code>ko resolve -f deploy.yaml</code> 结果如下，可以看到 <code>ko://github.com/http-helloworld/cmd/helloworld</code> 被替换成了 <code>zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ko resolve -f deploy.yaml</span><br><span class="line"></span><br><span class="line">2021/04/23 22:09:19 Using base gcr.io/distroless/static:nonroot <span class="keyword">for</span> github.com/http-helloworld/cmd/helloworld</span><br><span class="line">2021/04/23 22:09:19 No matching credentials were found <span class="keyword">for</span> <span class="string">"gcr.io/distroless/static"</span>, falling back on anonymous</span><br><span class="line">2021/04/23 22:09:23 Building github.com/http-helloworld/cmd/helloworld <span class="keyword">for</span> linux/amd64</span><br><span class="line">2021/04/23 22:09:24 Publishing zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest</span><br><span class="line">2021/04/23 22:09:31 existing blob: sha256:5dea5ec2316d4a067b946b15c3c4f140b4f2ad607e73e9bc41b673ee5ebb99a3</span><br><span class="line">2021/04/23 22:09:31 existing blob: sha256:d99fea081f251cc06ce68ce7cb224e2a0f63babd03ee9dd6bb03f6bf76dcb5a5</span><br><span class="line">2021/04/23 22:09:32 existing blob: sha256:72164b581b02b1eb297b403bcc8fc1bfa245cb52e103a3a525a0835a58ff58e2</span><br><span class="line">2021/04/23 22:09:32 existing blob: sha256:a3e2b18c53ecc2aab65b3b70e5c16486e48f76490febeb68d99aa18a48265b08</span><br><span class="line">2021/04/23 22:09:32 zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest: digest: sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0 size: 750</span><br><span class="line">2021/04/23 22:09:32 Published zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: hello-world</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      foo: bar</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        foo: bar</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">        - name: hello-world</span><br><span class="line">          <span class="comment"># This is the import path for the Go binary to build and run.</span></span><br><span class="line">          image: zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</span><br><span class="line">          ports:</span><br><span class="line">            - containerPort: 8080</span><br></pre></td></tr></table></figure>
+<h3 id="6-Ko-apply"><a href="#6-Ko-apply" class="headerlink" title="6. Ko apply"></a>6. Ko apply</h3><p><code>ko apply -f xxx.yaml</code> 用法同 <code>kubectl apply -f xxx.yaml</code> ,<strong>不同的是，<code>ko apply -f</code> 相当于先执行 <code>resolve</code> 将 <code>ko://xxx</code> 替换成镜像地址，然后再执行 <code>kubectl apply -f</code>  。</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/github.com/http-helloworld/config</span><br><span class="line">$ ko apply -f ./</span><br><span class="line"></span><br><span class="line">2021/04/23 22:18:10 Using base gcr.io/distroless/static:nonroot <span class="keyword">for</span> github.com/http-helloworld/cmd/helloworld</span><br><span class="line">2021/04/23 22:18:10 No matching credentials were found <span class="keyword">for</span> <span class="string">"gcr.io/distroless/static"</span>, falling back on anonymous</span><br><span class="line">2021/04/23 22:18:13 Building github.com/http-helloworld/cmd/helloworld <span class="keyword">for</span> linux/amd64</span><br><span class="line">2021/04/23 22:18:15 Publishing zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest</span><br><span class="line">2021/04/23 22:18:24 existing blob: sha256:a3e2b18c53ecc2aab65b3b70e5c16486e48f76490febeb68d99aa18a48265b08</span><br><span class="line">2021/04/23 22:18:24 existing blob: sha256:d99fea081f251cc06ce68ce7cb224e2a0f63babd03ee9dd6bb03f6bf76dcb5a5</span><br><span class="line">2021/04/23 22:18:24 existing blob: sha256:72164b581b02b1eb297b403bcc8fc1bfa245cb52e103a3a525a0835a58ff58e2</span><br><span class="line">2021/04/23 22:18:24 existing blob: sha256:5dea5ec2316d4a067b946b15c3c4f140b4f2ad607e73e9bc41b673ee5ebb99a3</span><br><span class="line">2021/04/23 22:18:25 zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest: digest: sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0 size: 750</span><br><span class="line">2021/04/23 22:18:25 Published zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:21d352ec9f9079f8da4c91cfe2461df51a404c079f262390b19fff4cb2ce15a0</span><br><span class="line">deployment.apps/hello-world configured</span><br></pre></td></tr></table></figure>
+<h3 id="7-替换基础镜像"><a href="#7-替换基础镜像" class="headerlink" title="7. 替换基础镜像"></a>7. 替换基础镜像</h3><p>可以通过 <code>ko</code> 的 <code>config</code> 文件中的 <code>defaultBaseImage</code> 变量来设置基础镜像, 配置文件名为 <code>.ko.yaml</code> ,</p>
+<p>ko 执行时默认会在当前目录下寻找 <code>.ko.yaml</code> 文件，也可以通过 环境变量 <code>KO_CONFIG_PATH</code> 来指定 <code>.ko.yaml</code> 的路径</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># ~/.ko.yaml</span></span><br><span class="line">defaultBaseImage: ubuntu</span><br></pre></td></tr></table></figure>
+<p>执行如下 </p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">$ <span class="built_in">export</span> KO_CONFIG_PATH=~/</span><br><span class="line">$ ko apply  -f ./config</span><br><span class="line"></span><br><span class="line">2021/04/23 22:28:50 Using base ubuntu <span class="keyword">for</span> github.com/http-helloworld/cmd/helloworld</span><br><span class="line">2021/04/23 22:29:00 Building github.com/http-helloworld/cmd/helloworld <span class="keyword">for</span> linux/amd64</span><br><span class="line">2021/04/23 22:29:01 Publishing zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest</span><br><span class="line">2021/04/23 22:29:14 existing blob: sha256:72164b581b02b1eb297b403bcc8fc1bfa245cb52e103a3a525a0835a58ff58e2</span><br><span class="line">2021/04/23 22:29:14 existing blob: sha256:d99fea081f251cc06ce68ce7cb224e2a0f63babd03ee9dd6bb03f6bf76dcb5a5</span><br><span class="line">2021/04/23 22:29:14 mounted blob: sha256:a70d879fa5984474288d52009479054b8bb2993de2a1859f43b5480600cecb24</span><br><span class="line">2021/04/23 22:29:14 mounted blob: sha256:c4394a92d1f8760cf7d17fee0bcee732c94c5b858dd8d19c7ff02beecf3b4e83</span><br><span class="line">2021/04/23 22:29:14 mounted blob: sha256:10e6159c56c084c858f5de2416454ac0a49ddda47b764e4379c5d5a147c9bf5f</span><br><span class="line">2021/04/23 22:29:16 pushed blob: sha256:91d93e3477d55b71f5760478dcab690846ca5f76d92bbef874970460b3e73e5b</span><br><span class="line">2021/04/23 22:29:17 zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest: digest: sha256:623cb60ff10751f3f6a5f6570aaf5f49aee5fb6afc1ef5cfde4dd48a8b4d57df size: 1072</span><br><span class="line">2021/04/23 22:29:17 Published zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:623cb60ff10751f3f6a5f6570aaf5f49aee5fb6afc1ef5cfde4dd48a8b4d57df</span><br><span class="line">deployment.apps/hello-world configured</span><br></pre></td></tr></table></figure>
+<p>还可以 通过<code>.ko.yaml</code> 文件中的 <code>baseImageOverrides</code> 对指定编译二进制替换基础镜像，如本示例中，设置如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># ~/.ko.yaml</span></span><br><span class="line">defaultBaseImage: ubuntu</span><br><span class="line">baseImageOverrides: </span><br><span class="line">  github.com/http-helloworld/cmd/helloworld: centos</span><br></pre></td></tr></table></figure>
+<p> 修改 <code>.ko.yaml</code> 后，执行命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ko apply -f config</span><br><span class="line"></span><br><span class="line">2021/04/23 22:38:14 Using base centos <span class="keyword">for</span> github.com/http-helloworld/cmd/helloworld</span><br><span class="line">2021/04/23 22:38:26 Building github.com/http-helloworld/cmd/helloworld <span class="keyword">for</span> linux/amd64</span><br><span class="line">2021/04/23 22:38:27 Publishing zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest</span><br><span class="line">2021/04/23 22:38:29 existing blob: sha256:72164b581b02b1eb297b403bcc8fc1bfa245cb52e103a3a525a0835a58ff58e2</span><br><span class="line">2021/04/23 22:38:29 existing blob: sha256:d99fea081f251cc06ce68ce7cb224e2a0f63babd03ee9dd6bb03f6bf76dcb5a5</span><br><span class="line">2021/04/23 22:38:29 mounted blob: sha256:7a0437f04f83f084b7ed68ad9c4a4947e12fc4e1b006b38129bac89114ec3621</span><br><span class="line">2021/04/23 22:38:32 pushed blob: sha256:e909db5555a2c7310e605e60a47a98661c9a5c54d567f741a8d677f84c8a887f</span><br><span class="line">2021/04/23 22:38:32 zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648:latest: digest: sha256:dc009335be23a9eee0235e425218f18a68c3210b00adac7cfe736d9bf38f4121 size: 752</span><br><span class="line">2021/04/23 22:38:32 Published zhaojizhuang66/helloworld-cbcbba9849adcc25ce56a08dfd597648@sha256:dc009335be23a9eee0235e425218f18a68c3210b00adac7cfe736d9bf38f4121</span><br><span class="line">deployment.apps/hello-world configured</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -438,7 +471,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://chumper.cn/2019/05/10/epoll/" title=" 谈谈 epoll ">https://chumper.cn/2019/05/10/epoll/</a>
+    <a href="https://chumper.cn/2021/04/23/ko-dev/" title="如何利用 Google 开源工具 Ko 在 kubernetes 上构建并部署 Go 应用">https://chumper.cn/2021/04/23/ko-dev/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -465,9 +498,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/linux/" rel="tag"># linux</a>
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
           
-            <a href="/tags/epoll/" rel="tag"># epoll</a>
+            <a href="/tags/云原生/" rel="tag"># 云原生</a>
           
         </div>
       
@@ -480,8 +513,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/04/02/gomap/" rel="next" title="浅谈 Go map ">
-                <i class="fa fa-chevron-left"></i> 浅谈 Go map 
+              <a href="/2021/04/21/write-controller/" rel="next" title="【Knative系列】如何基于 Knative 开发自定义控制器">
+                <i class="fa fa-chevron-left"></i> 【Knative系列】如何基于 Knative 开发自定义控制器
               </a>
             
           </div>
@@ -490,8 +523,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/11/12/neicunguanliyufenpei/" rel="prev" title="Go 内存管理">
-                Go 内存管理 <i class="fa fa-chevron-right"></i>
+              <a href="/2021/06/27/cilium_arch/" rel="prev" title="典型的 Serverless 架构是怎样的">
+                典型的 Serverless 架构是怎样的 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -649,7 +682,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#epoll"><span class="nav-number">1.</span> <span class="nav-text">epoll</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IO-多路复用"><span class="nav-number">2.</span> <span class="nav-text">IO 多路复用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#select"><span class="nav-number">2.1.</span> <span class="nav-text">select</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#poll与select一样，只是去掉了-1024的限制"><span class="nav-number">2.2.</span> <span class="nav-text">poll与select一样，只是去掉了 1024的限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#epoll-1"><span class="nav-number">2.3.</span> <span class="nav-text">epoll</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#特点："><span class="nav-number">1.</span> <span class="nav-text">特点：</span></a></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#如何使用"><span class="nav-number"></span> <span class="nav-text">如何使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-安装-ko"><span class="nav-number">1.</span> <span class="nav-text">1. 安装 ko</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-镜像仓库的认证"><span class="nav-number">2.</span> <span class="nav-text">2. 镜像仓库的认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-设置私有仓库的地址"><span class="nav-number">3.</span> <span class="nav-text">3. 设置私有仓库的地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-镜像构建-Ko-publish"><span class="nav-number">4.</span> <span class="nav-text">4. 镜像构建 Ko publish</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-Ko-resolve"><span class="nav-number">5.</span> <span class="nav-text">5. Ko resolve</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-Ko-apply"><span class="nav-number">6.</span> <span class="nav-text">6. Ko apply</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-替换基础镜像"><span class="nav-number">7.</span> <span class="nav-text">7. 替换基础镜像</span></a></li></ol></li></div>
             
 
           </div>

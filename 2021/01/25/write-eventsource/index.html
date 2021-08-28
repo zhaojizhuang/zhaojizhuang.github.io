@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="linux,epoll,">
+  <meta name="keywords" content="knative,source,event,">
 
 
 
@@ -81,22 +81,18 @@
 
 
 
-<meta name="description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
-<meta name="keywords" content="linux,epoll">
+<meta name="description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
+<meta name="keywords" content="knative,source,event">
 <meta property="og:type" content="article">
-<meta property="og:title" content=" 谈谈 epoll ">
-<meta property="og:url" content="https://chumper.cn/2019/05/10/epoll/index.html">
+<meta property="og:title" content="【Knative系列】Knative Source 开发指南">
+<meta property="og:url" content="https://chumper.cn/2021/01/25/write-eventsource/index.html">
 <meta property="og:site_name" content="赵吉壮">
-<meta property="og:description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
+<meta property="og:description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg">
-<meta property="og:image" content="https://pic1.zhimg.com/80/v2-90632d0dc3ded7f91379b848ab53974c_720w.jpg">
-<meta property="og:image" content="https://pic4.zhimg.com/80/v2-40bd5825e27cf49b7fd9a59dfcbe4d6f_720w.jpg">
-<meta property="og:updated_time" content="2020-07-28T09:43:32.016Z">
+<meta property="og:updated_time" content="2021-02-26T02:21:55.191Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content=" 谈谈 epoll ">
-<meta name="twitter:description" content="epollIO 多路复用目前支持I/O多路复用的系统调用有 select，pselect，poll，epoll ，I/O多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作 select调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，可以通过遍历fdset">
-<meta name="twitter:image" content="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg">
+<meta name="twitter:title" content="【Knative系列】Knative Source 开发指南">
+<meta name="twitter:description" content="准备： 安装 go-licenses https://github.com/google/go-licenses  1. 相关概念的设计解耦2. API 定义3. Controller4. Reconciler5. Receive Adapter6. Example YAML7. Moving the event source to the knative-sandbox organization">
 
 
 
@@ -127,14 +123,14 @@
 
 
 
-  <link rel="canonical" href="https://chumper.cn/2019/05/10/epoll/">
+  <link rel="canonical" href="https://chumper.cn/2021/01/25/write-eventsource/">
 
 
 
 
 
 
-  <title> 谈谈 epoll  | 赵吉壮</title>
+  <title>【Knative系列】Knative Source 开发指南 | 赵吉壮</title>
   
 
 
@@ -323,7 +319,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2019/05/10/epoll/">
+    <link itemprop="mainEntityOfPage" href="https://chumper.cn/2021/01/25/write-eventsource/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="zhaojizhuang">
@@ -340,7 +336,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline"> 谈谈 epoll </h1>
+          <h1 class="post-title" itemprop="name headline">【Knative系列】Knative Source 开发指南</h1>
         
 
         <div class="post-meta">
@@ -352,8 +348,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-10T11:40:18+08:00">
-                2019-05-10
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-01-25T23:40:18+08:00">
+                2021-01-25
               </time>
             
 
@@ -362,6 +358,28 @@
             
           </span>
 
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -390,35 +408,15 @@
       
 
       
-        <h2 id="epoll"><a href="#epoll" class="headerlink" title="epoll"></a>epoll</h2><h2 id="IO-多路复用"><a href="#IO-多路复用" class="headerlink" title="IO 多路复用"></a>IO 多路复用</h2><p>目前支持I/O多路复用的系统调用有 <code>select，pselect，poll，epoll</code> ，I/O多路复用就是通过一种机制，<code>一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作</code></p>
-<h3 id="select"><a href="#select" class="headerlink" title="select"></a>select</h3><p>调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写），或者超时，函数返回。当select函数返回后，<strong>可以通过遍历fdset，来找到就绪的描述符</strong>。</p>
-<p>select的流程</p>
-<p>假如程序同时监视如下图的sock1、sock2和sock3三个socket，那么在调用select之后，<strong>操作系统把进程A分别加入这三个socket的等待队列中</strong></p>
-<p><img src="https://pic4.zhimg.com/80/v2-0cccb4976f8f2c2f8107f2b3a5bc46b3_720w.jpg" alt=""></p>
-<p>当任何一个socket收到数据后，中断程序将唤起进程,将进程从所有<strong>fd（socket）的等待队列中</strong>移除，再将进程加入到工作队列里面</p>
-<p>进程A被唤醒后，它知道至少有一个socket接收了数据。<strong>程序需遍历一遍socket列表，可以得到就绪的socket</strong></p>
-<p>缺点：</p>
-<ul>
-<li><p>其一，每次调用select都需要将进程加入到所有监视socket的等待队列，每次唤醒都需要从每个队列中移除。这里涉及了两次遍历，而且每次都要将整个fds列表传递给内核，有一定的开销。正是因为遍历操作开销大，出于效率的考量，才会规定select的最大监视数量，<strong>默认只能监视1024个socket</strong>。</p>
-</li>
-<li><p>其二，进程被唤醒后，程序并不知道哪些socket收到数据，还需要遍历一次。</p>
-</li>
+        <h3 id="准备："><a href="#准备：" class="headerlink" title="准备："></a>准备：</h3><ul>
+<li>安装 <code>go-licenses</code> <a href="https://github.com/google/go-licenses" target="_blank" rel="noopener">https://github.com/google/go-licenses</a></li>
 </ul>
-<h3 id="poll与select一样，只是去掉了-1024的限制"><a href="#poll与select一样，只是去掉了-1024的限制" class="headerlink" title="poll与select一样，只是去掉了 1024的限制"></a>poll与select一样，只是去掉了 1024的限制</h3><h3 id="epoll-1"><a href="#epoll-1" class="headerlink" title="epoll"></a>epoll</h3><p><code>epoll</code> 事先通过 <code>epoll_ctl()</code> 来注册一个文件描述符，一旦基于某个文件描述符就绪时，内核会采用类似 <code>callback</code> 的回调机制，迅速激活这个文件描述符，当进程调用 <code>epoll_wait()</code> 时便得到通知。(<strong>此处去掉了遍历文件描述符，而是通过监听回调的的机制。这正是epoll的魅力所在</strong>。)</p>
-<p>epoll使<strong>用一个文件描述符(<code>eventpoll</code>)管理多个描述符</strong>，将用户关系的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> s = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);   </span><br><span class="line">bind(s, ...)</span><br><span class="line">listen(s, ...)</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> epfd = epoll_create(...);</span><br><span class="line">epoll_ctl(epfd, ...); <span class="comment">//将所有需要监听的socket添加到epfd中</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">    <span class="keyword">int</span> n = epoll_wait(...)</span><br><span class="line">    <span class="keyword">for</span>(接收到数据的socket)&#123;</span><br><span class="line">        <span class="comment">//处理</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>流程：<br>首先创建 epoll对象<br>创建epoll对象后，可以用epoll_ctl添加或删除所要监听的socket</p>
-<p>假设计算机中正在运行进程A和进程B，在某时刻进程A运行到了epoll_wait语句。如下图所示，内核会将进程A放入eventpoll的等待队列中，阻塞进程</p>
-<p><img src="https://pic1.zhimg.com/80/v2-90632d0dc3ded7f91379b848ab53974c_720w.jpg" alt=""></p>
-<p>当socket接收到数据，<strong>中断程序一方面修改rdlist</strong>，另一方面唤醒eventpoll等待队列中的进程，进程A再次进入运行状态（如下图）。也因为rdlist的存在，<strong>进程A可以知道哪些socket发生了变化</strong>。</p>
-<p><img src="https://pic4.zhimg.com/80/v2-40bd5825e27cf49b7fd9a59dfcbe4d6f_720w.jpg" alt=""></p>
-<p>参考文章 </p>
-<ol>
-<li><a href="https://www.jianshu.com/p/dfd940e7fca2" target="_blank" rel="noopener">https://www.jianshu.com/p/dfd940e7fca2</a></li>
+<h3 id="1-相关概念的设计解耦"><a href="#1-相关概念的设计解耦" class="headerlink" title="1. 相关概念的设计解耦"></a>1. 相关概念的设计解耦</h3><h3 id="2-API-定义"><a href="#2-API-定义" class="headerlink" title="2. API 定义"></a>2. API 定义</h3><h3 id="3-Controller"><a href="#3-Controller" class="headerlink" title="3. Controller"></a>3. Controller</h3><h3 id="4-Reconciler"><a href="#4-Reconciler" class="headerlink" title="4. Reconciler"></a>4. Reconciler</h3><h3 id="5-Receive-Adapter"><a href="#5-Receive-Adapter" class="headerlink" title="5. Receive Adapter"></a>5. Receive Adapter</h3><h3 id="6-Example-YAML"><a href="#6-Example-YAML" class="headerlink" title="6. Example YAML"></a>6. Example YAML</h3><h3 id="7-Moving-the-event-source-to-the-knative-sandbox-organization"><a href="#7-Moving-the-event-source-to-the-knative-sandbox-organization" class="headerlink" title="7. Moving the event source to the knative-sandbox organization"></a>7. Moving the event source to the knative-sandbox organization</h3><blockquote>
+<p><em>注意：运行 hack/update-codegen.sh 时在 linux上，mac 上会报错，见 issue <a href="https://github.com/knative/hack/issues/50" target="_blank" rel="noopener">https://github.com/knative/hack/issues/50</a></em></p>
+</blockquote>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ol>
+<li>官网 doc <a href="https://knative.dev/docs/eventing/samples/writing-event-source/" target="_blank" rel="noopener">https://knative.dev/docs/eventing/samples/writing-event-source/</a></li>
 </ol>
-<p><a href="https://zhuanlan.zhihu.com/p/63179839" target="_blank" rel="noopener">2 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(1)</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/64138532" target="_blank" rel="noopener">3 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(2)</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/64746509" target="_blank" rel="noopener">4 罗培羽：如果这篇文章说不清epoll的本质，那就过来掐死我吧！(3)</a></p>
 
       
     </div>
@@ -438,7 +436,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://chumper.cn/2019/05/10/epoll/" title=" 谈谈 epoll ">https://chumper.cn/2019/05/10/epoll/</a>
+    <a href="https://chumper.cn/2021/01/25/write-eventsource/" title="【Knative系列】Knative Source 开发指南">https://chumper.cn/2021/01/25/write-eventsource/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -465,9 +463,11 @@
       
         <div class="post-tags">
           
-            <a href="/tags/linux/" rel="tag"># linux</a>
+            <a href="/tags/knative/" rel="tag"># knative</a>
           
-            <a href="/tags/epoll/" rel="tag"># epoll</a>
+            <a href="/tags/source/" rel="tag"># source</a>
+          
+            <a href="/tags/event/" rel="tag"># event</a>
           
         </div>
       
@@ -480,8 +480,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/04/02/gomap/" rel="next" title="浅谈 Go map ">
-                <i class="fa fa-chevron-left"></i> 浅谈 Go map 
+              <a href="/2020/10/15/knative-serving/" rel="next" title="【Knative系列】看完这篇还不懂 Knative Serving，你来打我~(史上最详细)">
+                <i class="fa fa-chevron-left"></i> 【Knative系列】看完这篇还不懂 Knative Serving，你来打我~(史上最详细)
               </a>
             
           </div>
@@ -490,8 +490,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/11/12/neicunguanliyufenpei/" rel="prev" title="Go 内存管理">
-                Go 内存管理 <i class="fa fa-chevron-right"></i>
+              <a href="/2021/04/21/write-controller/" rel="prev" title="【Knative系列】如何基于 Knative 开发自定义控制器">
+                【Knative系列】如何基于 Knative 开发自定义控制器 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -649,7 +649,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#epoll"><span class="nav-number">1.</span> <span class="nav-text">epoll</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IO-多路复用"><span class="nav-number">2.</span> <span class="nav-text">IO 多路复用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#select"><span class="nav-number">2.1.</span> <span class="nav-text">select</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#poll与select一样，只是去掉了-1024的限制"><span class="nav-number">2.2.</span> <span class="nav-text">poll与select一样，只是去掉了 1024的限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#epoll-1"><span class="nav-number">2.3.</span> <span class="nav-text">epoll</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#准备："><span class="nav-number">1.</span> <span class="nav-text">准备：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-相关概念的设计解耦"><span class="nav-number">2.</span> <span class="nav-text">1. 相关概念的设计解耦</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-API-定义"><span class="nav-number">3.</span> <span class="nav-text">2. API 定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Controller"><span class="nav-number">4.</span> <span class="nav-text">3. Controller</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Reconciler"><span class="nav-number">5.</span> <span class="nav-text">4. Reconciler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-Receive-Adapter"><span class="nav-number">6.</span> <span class="nav-text">5. Receive Adapter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-Example-YAML"><span class="nav-number">7.</span> <span class="nav-text">6. Example YAML</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-Moving-the-event-source-to-the-knative-sandbox-organization"><span class="nav-number">8.</span> <span class="nav-text">7. Moving the event source to the knative-sandbox organization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">9.</span> <span class="nav-text">参考</span></a></li></ol></div>
             
 
           </div>

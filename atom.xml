@@ -77,7 +77,7 @@
     <link href="https://chumper.cn/2021/06/27/cilium_arch/"/>
     <id>https://chumper.cn/2021/06/27/cilium_arch/</id>
     <published>2021-06-27T11:16:18.000Z</published>
-    <updated>2021-08-28T14:43:26.956Z</updated>
+    <updated>2021-08-28T14:45:00.656Z</updated>
     
     <summary type="html">
     
@@ -333,9 +333,9 @@
     
     
     
-      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
-    
       <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+    
+      <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
   </entry>
   
@@ -389,11 +389,11 @@
       <category term="Go" scheme="https://chumper.cn/categories/Go/"/>
     
     
-      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
+      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
     
       <category term="epoll" scheme="https://chumper.cn/tags/epoll/"/>
     
-      <category term="linux" scheme="https://chumper.cn/tags/linux/"/>
+      <category term="Go" scheme="https://chumper.cn/tags/Go/"/>
     
   </entry>
   
